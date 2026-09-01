@@ -802,12 +802,6 @@
         }
       } else if (data.type === "status") {
         updateStatusBadge(data.state);
-        if (data.command && (data.state === "thinking" || data.state === "acting")) {
-          appendUserMessage(data.command);
-        }
-        if (data.response && data.response.trim() && (data.state === "idle" || data.state === "acting")) {
-          appendAssistantMessage(data.response);
-        }
         if (typeof data.agent_active === "boolean") {
           setAgentActiveUI(data.agent_active);
         }
@@ -819,14 +813,7 @@
       } else if (data.type === "log") {
         if (data.level === "tool") {
           appendToolNotification(data.message);
-        } else if (data.level === "assistant" || data.level === "response") {
-          appendAssistantMessage(data.message);
-        } else if (data.level === "success" && data.message && data.message.startsWith("Task Done: ")) {
-          appendAssistantMessage(data.message.replace("Task Done: ", ""));
         }
-      } else if (data.type === "response" || data.type === "assistant_message") {
-        const txt = data.content || data.message || data.text;
-        if (txt) appendAssistantMessage(txt);
       }
     }
 
