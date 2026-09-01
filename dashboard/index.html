@@ -810,6 +810,12 @@
           if (typeof data.status.agent_active === "boolean") setAgentActiveUI(data.status.agent_active);
           if (data.status.state) updateStatusBadge(data.status.state);
         }
+        if (Array.isArray(data.chat_history)) {
+          data.chat_history.forEach(item => {
+            if (item.role === "user") appendUserMessage(item.text);
+            else appendAssistantMessage(item.text);
+          });
+        }
       } else if (data.type === "log") {
         if (data.level === "tool") {
           appendToolNotification(data.message);
@@ -1089,7 +1095,21 @@
         .replace(/\n/g, " ");
     }
 
-    // Init status
+    // Init status & Chat sync
+    function syncChat() {
+      fetch("/api/chat")
+        .then(r => r.json())
+        .then(d => {
+          if (Array.isArray(d.chat)) {
+            d.chat.forEach(item => {
+              if (item.role === "user") appendUserMessage(item.text);
+              else appendAssistantMessage(item.text);
+            });
+          }
+        })
+        .catch(() => {});
+    }
+
     fetch("/status")
       .then(r => r.json())
       .then(d => {
@@ -1098,6 +1118,8 @@
       })
       .catch(() => {});
 
+    syncChat();
+    setInterval(syncChat, 2000);
     connectWS();
   </script>
 </body>

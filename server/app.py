@@ -78,10 +78,22 @@ async def get_dashboard():
     })
 
 
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    get_ws_manager().set_loop(asyncio.get_running_loop())
+
+
 @app.get("/status")
 async def get_status():
     """Get current agent status."""
     return get_ws_manager().agent_status
+
+
+@app.get("/api/chat")
+async def get_chat_history():
+    """Get recent chat messages."""
+    return {"chat": list(get_ws_manager().chat_history)}
 
 
 @app.get("/logs")
