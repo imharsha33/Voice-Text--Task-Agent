@@ -73,10 +73,10 @@ def main():
         log(f"Brain initialization failed: {e}", "error")
         sys.exit(1)
 
-    # ── 3. Initialize TTS ──────────────────────────────────────────
+    # ── 3. Single Clear Startup Greeting ───────────────────────────
     try:
-        speak_async(f"Bujji is starting up on {current_os}.")
         log("TTS engine ready ✓", "success")
+        speak_sync("Hello there! How can I help you today?")
     except Exception as e:
         log(f"TTS initialization notice: {e}", "warning")
 
