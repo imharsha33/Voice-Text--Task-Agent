@@ -27,11 +27,12 @@ class GroqLLMProvider(BaseLLMProvider):
         self.api_key = api_key or os.getenv("GROQ_API_KEY") or "gsk_dummy_key_for_init"
         self.primary_model = model or os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.client = Groq(api_key=self.api_key)
+        # Fallback cascade: only real Groq-hosted models
         self.fallback_models = [
             self.primary_model,
-            "openai/gpt-oss-20b",
-            "qwen/qwen3.8-27b",
-            "openai/gpt-oss-120b"
+            "llama-3.1-8b-instant",
+            "gemma2-9b-it",
+            "mixtral-8x7b-32768"
         ]
 
     def _parse_tool_args(self, args_str: str) -> Dict[str, Any]:
@@ -126,15 +127,9 @@ class GroqLLMProvider(BaseLLMProvider):
         full_content = "".join(content_parts)
         duration_ms = (time.time() - start_time) * 1000
 
-        # Extract actual token counts if provided by Groq API
-        prompt_tokens: Optional[int] = None
-        completion_tokens: Optional[int] = None
-
-        for chunk in response_stream if hasattr(response_stream, '__iter__') else []:
-            pass
-
-        # Check if Groq returned usage metadata on the last chunk
-        # If not returned by provider stream, we keep them as None per strict requirement
+        # Build parsed tool calls from accumulated stream fragments
+        prompt_tokens = None
+        completion_tokens = None
         parsed_tool_calls: List[ToolCall] = []
         for tc_dict in tool_calls_map.values():
             parsed_tool_calls.append(
