@@ -1,0 +1,190 @@
+"""
+app.py — FastAPI Application Server for Bujji Agent Mission Control
+Provides REST API, WebSocket streams, and dashboard static files.
+"""
+
+import os
+import io
+import time
+import threading
+from pathlib import Path
+from typing import Optional, Callable
+import uvicorn
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, JSONResponse
+
+from server.ws import get_ws_manager
+from observability.tracker import get_tracker
+from observability.logger import set_broadcast_callback
+from voice.stt import GroqWhisperSTT
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DASHBOARD_DIR = BASE_DIR / "dashboard"
+
+app = FastAPI(title="Bujji Agent Mission Control")
+
+# Mount dashboard static assets if directory exists
+if DASHBOARD_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(DASHBOARD_DIR)), name="static")
+
+_command_processor: Optional[Callable[[str], None]] = None
+_listener_instance = None
+_stt_instance: Optional[GroqWhisperSTT] = None
+
+
+def set_command_processor(fn: Callable[[str], None]):
+    """Register callback to execute commands from web dashboard."""
+    global _command_processor
+    _command_processor = fn
+
+
+def set_listener_instance(listener):
+    """Register listener instance to control pause/resume."""
+    global _listener_instance
+    _listener_instance = listener
+
+
+def update_status(state: str, command: str = "", response: str = ""):
+    """Update UI agent status."""
+    get_ws_manager().update_status(state, command, response)
+
+
+def broadcast_log(level: str, message: str):
+    """Broadcast log to UI."""
+    get_ws_manager().add_log(level, message)
+
+
+# Connect observability broadcast callback
+set_broadcast_callback(broadcast_log)
+
+
+@app.get("/", response_class=HTMLResponse)
+async def get_dashboard():
+    """Serve the dashboard HTML without caching."""
+    index_path = DASHBOARD_DIR / "index.html"
+    if not index_path.exists():
+        return HTMLResponse("<h1>Bujji Agent Server is Running. Dashboard not found.</h1>")
+    content = index_path.read_text(encoding="utf-8")
+    return HTMLResponse(content=content, headers={
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    })
+
+
+@app.get("/status")
+async def get_status():
+    """Get current agent status."""
+    return get_ws_manager().agent_status
+
+
+@app.get("/logs")
+async def get_logs():
+    """Get recent log buffer."""
+    return {"logs": list(get_ws_manager().log_buffer)}
+
+
+@app.get("/metrics")
+async def get_metrics():
+    """Get real-time observability telemetry and token counts."""
+    return get_tracker().get_summary()
+
+
+@app.post("/api/command")
+async def execute_command(payload: dict):
+    """Execute a text command received from the dashboard UI."""
+    cmd = payload.get("command", "").strip()
+    if not cmd:
+        return {"error": "Empty command"}
+    if _command_processor:
+        threading.Thread(target=_command_processor, args=(cmd,), daemon=True).start()
+        return {"status": "processing", "command": cmd}
+    return {"error": "Command processor not connected"}
+
+
+@app.post("/api/agent/toggle")
+async def toggle_agent(payload: Optional[dict] = None):
+    """Start or stop the voice listener."""
+    manager = get_ws_manager()
+    status = manager.agent_status
+    if payload and "active" in payload:
+        new_state = bool(payload["active"])
+    else:
+        new_state = not status.get("agent_active", True)
+
+    status["agent_active"] = new_state
+    if _listener_instance:
+        if new_state:
+            _listener_instance.resume()
+            manager.update_status("listening")
+            broadcast_log("info", "Agent voice listening resumed via dashboard")
+        else:
+            _listener_instance.pause()
+            manager.update_status("idle")
+            broadcast_log("info", "Agent paused via dashboard")
+
+    return {"agent_active": new_state, "state": status.get("state")}
+
+
+@app.post("/api/audio/transcribe")
+async def transcribe_audio_file(file: UploadFile = File(...)):
+    """Transcribe web audio recording directly via STT."""
+    global _stt_instance
+    try:
+        content = await file.read()
+        if not content:
+            return JSONResponse({"error": "Empty audio data"}, status_code=400)
+
+        # Use Groq Whisper directly with file bytes
+        from groq import Groq
+        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        transcription = groq_client.audio.transcriptions.create(
+            file=("audio.webm", content, file.content_type or "audio/webm"),
+            model="whisper-large-v3-turbo",
+            language="en",
+            response_format="text",
+            temperature=0.0
+        )
+        text = str(transcription).strip()
+        return {"text": text}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time telemetry."""
+    manager = get_ws_manager()
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                msg = uvicorn.json.loads(data) if hasattr(uvicorn, "json") else eval(data)
+                if isinstance(msg, dict) and msg.get("type") == "command":
+                    cmd = msg.get("command", "").strip()
+                    if cmd and _command_processor:
+                        threading.Thread(target=_command_processor, args=(cmd,), daemon=True).start()
+            except Exception:
+                pass
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception:
+        manager.disconnect(websocket)
+
+
+def start_server_background(port: Optional[int] = None):
+    """Launch FastAPI server in a background daemon thread."""
+    server_port = port or int(os.getenv("DASHBOARD_PORT", "8765"))
+    config = uvicorn.Config(
+        app=app,
+        host="0.0.0.0",
+        port=server_port,
+        log_level="warning",
+        access_log=False
+    )
+    server = uvicorn.Server(config)
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    return thread

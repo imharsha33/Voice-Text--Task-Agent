@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Bujji AI — Assistant</title>
+  <meta name="description" content="Clean, professional ChatGPT-style voice and automation agent." />
+  <link rel="icon" type="image/jpeg" href="/static/bujji_logo.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-main: #0c081e;
+      --bg-sidebar: #120c2e;
+      --bg-card: #19123b;
+      --bg-card-hover: #241a54;
+      --bg-input: #1a123d;
+      
+      --border-color: rgba(217, 70, 239, 0.15);
+      --border-focus: #c026d3;
+
+      --accent: #9333ea;
+      --accent-hover: #7e22ce;
+      --accent-cyan: #c084fc;
+      --accent-magenta: #d946ef;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+
+      --text-primary: #faf5ff;
+      --text-secondary: #d8b4fe;
+      --text-muted: #8b7ca8;
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Layout Container */
+    .app-container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ─── Left Sidebar ─── */
+    .sidebar {
+      width: 280px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      box-shadow: 0 0 14px rgba(217, 70, 239, 0.45);
+      border: 1px solid rgba(217, 70, 239, 0.3);
+    }
+
+    .brand-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .brand-tag {
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--accent-cyan);
+      padding: 2px 6px;
+      border-radius: 12px;
+    }
+
+    /* Master Agent Controls in Sidebar */
+    .agent-status-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .status-label-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    .status-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .agent-toggle-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      transition: all 0.2s ease;
+    }
+
+    .agent-toggle-btn.stopped {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .agent-toggle-btn:hover {
+      filter: brightness(1.15);
+    }
+
+    /* Presets / Prompts List */
+    .sidebar-section-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .preset-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .preset-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-btn:hover {
+      background: var(--bg-card);
+      border-color: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .preset-icon { font-size: 0.95rem; }
+
+    .sidebar-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .clear-chat-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+
+    .clear-chat-btn:hover {
+      color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* ─── Main Chat Viewport ─── */
+    .main-viewport {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--bg-main);
+      min-width: 0;
+      position: relative;
+    }
+
+    /* Top Bar */
+    .chat-header {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(14, 17, 23, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .header-model-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .model-pill {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: var(--accent-cyan);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .status-indicator-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+    }
+
+    /* ─── Chat Messages Stream ─── */
+    .chat-scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 0 32px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chat-container {
+      max-width: 820px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Empty Welcome Screen */
+    .welcome-card {
+      margin: 40px auto 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      max-width: 580px;
+    }
+
+    .welcome-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 0 32px rgba(217, 70, 239, 0.5);
+      border: 2px solid rgba(217, 70, 239, 0.4);
+      animation: pulseGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      from { box-shadow: 0 0 20px rgba(147, 51, 234, 0.4); }
+      to { box-shadow: 0 0 36px rgba(217, 70, 239, 0.7); }
+    }
+
+    .welcome-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .welcome-sub {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .welcome-suggestions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      margin-top: 16px;
+    }
+
+    .suggestion-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .suggestion-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .sugg-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .sugg-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Message Rows */
+    .message-row {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-row.user {
+      justify-content: flex-end;
+    }
+
+    .msg-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.95rem;
+    }
+
+    .msg-avatar.assistant {
+      object-fit: cover;
+      border: 1px solid rgba(217, 70, 239, 0.3);
+      box-shadow: 0 0 10px rgba(147, 51, 234, 0.35);
+    }
+
+    .msg-avatar.user {
+      background: #374151;
+      color: white;
+    }
+
+    .msg-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 85%;
+    }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
+
+    .message-row.user .msg-bubble {
+      background: #2563eb;
+      color: #ffffff;
+      border-radius: var(--radius-md) var(--radius-md) 2px var(--radius-md);
+    }
+
+    .message-row.assistant .msg-bubble {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 2px;
+    }
+
+    /* Tool Call Notification Box inside chat */
+    .tool-execution-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #93c5fd;
+      margin-bottom: 4px;
+    }
+
+    .msg-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .msg-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .msg-action-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* ─── Bottom Floating Input Bar (ChatGPT Style) ─── */
+    .input-wrapper-outer {
+      padding: 0 20px 20px;
+      max-width: 820px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .chatgpt-input-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 28px;
+      padding: 8px 12px 8px 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .chatgpt-input-box:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+
+    .chat-text-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+    }
+
+    .chat-text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .record-voice-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-cyan);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .record-voice-btn:hover {
+      background: rgba(59, 130, 246, 0.3);
+      transform: scale(1.05);
+    }
+
+    .record-voice-btn.recording {
+      background: #ef4444;
+      border-color: #f87171;
+      color: #ffffff;
+      animation: pulseRecord 1s infinite alternate;
+    }
+
+    @keyframes pulseRecord {
+      from { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+      to { transform: scale(1.1); box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.4); }
+    }
+
+    .send-msg-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #ffffff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .send-msg-btn:hover {
+      background: var(--accent-hover);
+      transform: scale(1.05);
+    }
+
+    .send-msg-btn:disabled {
+      background: #374151;
+      color: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .input-disclaimer {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ─── Left Sidebar ─── -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-title">
+          <img class="brand-logo" src="/static/bujji_logo.jpg" alt="Bujji Logo" />
+          <span class="brand-name">Bujji Agent</span>
+        </div>
+        <span class="brand-tag">v2.0</span>
+      </div>
+
+      <!-- Master Agent Control -->
+      <div class="agent-status-panel">
+        <div class="status-row">
+          <div class="status-label-group">
+            <div class="status-dot" id="statusDot"></div>
+            <span class="status-name" id="agentStatusLabel">Agent Active</span>
+          </div>
+        </div>
+        <button id="agentToggleBtn" class="agent-toggle-btn" title="Toggle Agent On/Off">
+          <span id="toggleBtnText">⏸ Stop Agent</span>
+        </button>
+      </div>
+
+      <!-- Quick Action Presets -->
+      <div class="sidebar-section-title">Quick Automation</div>
+      <div class="preset-list">
+        <button class="preset-btn" data-cmd="Check my battery status and system info">
+          <span class="preset-icon">🔋</span>
+          <span>System & Battery</span>
+        </button>
+        <button class="preset-btn" data-cmd="Play lofi hip hop radio on YouTube">
+          <span class="preset-icon">🎵</span>
+          <span>Play Lofi Music</span>
+        </button>
+        <button class="preset-btn" data-cmd="Set volume to 50 percent">
+          <span class="preset-icon">🔊</span>
+          <span>Set Volume 50%</span>
+        </button>
+        <button class="preset-btn" data-cmd="Take a screenshot">
+          <span class="preset-icon">📸</span>
+          <span>Take Screenshot</span>
+        </button>
+        <button class="preset-btn" data-cmd="Search Google for latest tech news and summarize it">
+          <span class="preset-icon">🌐</span>
+          <span>Search Tech News</span>
+        </button>
+        <button class="preset-btn" data-cmd="Open Spotify">
+          <span class="preset-icon">🎧</span>
+          <span>Open Spotify</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <span>macOS Assistant</span>
+        <button id="clearChatBtn" class="clear-chat-btn" title="Clear conversation">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          <span>Clear Chat</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ─── Main Chat Viewport ─── -->
+    <main class="main-viewport">
+      <!-- Top Bar -->
+      <header class="chat-header">
+        <div class="header-model-badge">
+          <span>Bujji AI</span>
+          <span class="model-pill">GPT-OSS 20B • High-Speed Groq</span>
+        </div>
+        <div class="header-right">
+          <div class="live-status-badge">
+            <div class="status-indicator-dot" id="liveDot"></div>
+            <span id="liveStatusText">Ready</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Chat Scroll Stream -->
+      <div class="chat-scroll-area" id="chatScrollArea">
+        <div class="chat-container" id="chatContainer">
+          
+          <!-- Welcome Greeting (Shown when empty) -->
+          <div class="welcome-card" id="welcomeCard">
+            <img class="welcome-avatar" src="/static/bujji_logo.jpg" alt="Bujji AI" />
+            <h2 class="welcome-title">How can I help you today?</h2>
+            <p class="welcome-sub">Speak naturally, tap the record button, or type any command to control apps, play music, or automate tasks.</p>
+
+            <div class="welcome-suggestions-grid">
+              <div class="suggestion-card" data-cmd="Check my battery status and system info">
+                <span class="sugg-title">🔋 Check System Info</span>
+                <span class="sugg-desc">Inspect battery, CPU, RAM & disk space</span>
+              </div>
+              <div class="suggestion-card" data-cmd="Play lofi hip hop radio on YouTube">
+                <span class="sugg-title">🎵 Play Lofi on YouTube</span>
+                <span class="sugg-desc">Open browser & auto-play relaxing music</span>
+              </div>
+              <div class="suggestion-card" data-cmd="Search Google for latest tech news and summarize it">
+                <span class="sugg-title">🌐 Search Tech News</span>
+                <span class="sugg-desc">Get a concise summary of today's tech headlines</span>
+              </div>
+              <div class="suggestion-card" data-cmd="Take a screenshot">
+                <span class="sugg-title">📸 Capture Screenshot</span>
+                <span class="sugg-desc">Take a full resolution Mac screenshot</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Bottom Floating Input Area (ChatGPT Style) -->
+      <div class="input-wrapper-outer">
+        <form id="chatForm" class="chatgpt-input-box">
+          <input 
+            type="text" 
+            id="chatInput" 
+            class="chat-text-input" 
+            placeholder="Ask Bujji anything or give a command (or tap mic)..." 
+            autocomplete="off" 
+          />
+          <!-- Tap-to-Record Mic Button -->
+          <button type="button" id="recordBtn" class="record-voice-btn" title="Tap to record voice">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <!-- Send Button -->
+          <button type="submit" id="sendBtn" class="send-msg-btn" title="Send command">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </form>
+        <div class="input-disclaimer">Bujji Voice Agent • Autonomous Mac Control & Intelligence</div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <script>
+    "use strict";
+
+    // State
+    let ws = null;
+    let reconnectTimer = null;
+    let agentActive = true;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordStream = null;
+
+    // DOM Elements
+    const chatContainer = document.getElementById("chatContainer");
+    const welcomeCard = document.getElementById("welcomeCard");
+    const chatScrollArea = document.getElementById("chatScrollArea");
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+    const recordBtn = document.getElementById("recordBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const clearChatBtn = document.getElementById("clearChatBtn");
+
+    const agentToggleBtn = document.getElementById("agentToggleBtn");
+    const agentStatusLabel = document.getElementById("agentStatusLabel");
+    const toggleBtnText = document.getElementById("toggleBtnText");
+    const statusDot = document.getElementById("statusDot");
+    const liveDot = document.getElementById("liveDot");
+    const liveStatusText = document.getElementById("liveStatusText");
+
+    const WS_URL = `ws://${location.host}/ws`;
+
+    // Connect WebSocket
+    function connectWS() {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+
+      ws = new WebSocket(WS_URL);
+
+      ws.onopen = () => {
+        liveDot.style.background = "#10b981";
+        clearTimeout(reconnectTimer);
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          handleWSMessage(data);
+        } catch (err) {
+          console.warn("Parse error:", err);
+        }
+      };
+
+      ws.onclose = () => {
+        liveDot.style.background = "#ef4444";
+        liveStatusText.textContent = "Reconnecting...";
+        reconnectTimer = setTimeout(connectWS, 2000);
+      };
+    }
+
+    function handleWSMessage(data) {
+      if (data.type === "status") {
+        if (typeof data.agent_active === "boolean") {
+          setAgentActiveUI(data.agent_active);
+        }
+        updateStatusBadge(data.state);
+        
+        // Show current voice command if received
+        if (data.command && data.state === "thinking") {
+          appendUserMessage(data.command);
+        }
+
+        // If there's an incoming assistant response that just finished
+        if (data.response && data.response.trim() && data.state === "idle") {
+          appendAssistantMessage(data.response);
+        }
+      } else if (data.type === "log") {
+        if (data.level === "action") {
+          appendToolNotification(data.message);
+        } else if (data.level === "voice" && data.message.startsWith("Command: ")) {
+          const cmdText = data.message.replace("Command: ", "");
+          appendUserMessage(cmdText);
+        } else if (data.level === "success" && data.message.startsWith("Response: ")) {
+          const respText = data.message.replace("Response: ", "");
+          appendAssistantMessage(respText);
+        }
+      }
+    }
+
+    function updateStatusBadge(state) {
+      const MAP = {
+        idle: { text: "Ready", color: "#10b981" },
+        listening: { text: "Listening...", color: "#06b6d4" },
+        transcribing: { text: "Transcribing...", color: "#06b6d4" },
+        thinking: { text: "Thinking...", color: "#8b5cf6" },
+        acting: { text: "Executing...", color: "#f59e0b" },
+        speaking: { text: "Speaking...", color: "#10b981" },
+        error: { text: "Error", color: "#ef4444" },
+      };
+      const info = MAP[state] || MAP.idle;
+      liveStatusText.textContent = info.text;
+      liveDot.style.background = info.color;
+    }
+
+    // Chat Message Rendering
+    function appendUserMessage(text) {
+      if (welcomeCard) welcomeCard.style.display = "none";
+
+      const row = document.createElement("div");
+      row.className = "message-row user";
+      row.innerHTML = `
+        <div class="msg-body">
+          <div class="msg-bubble">${escapeHtml(text)}</div>
+        </div>
+      `;
+      chatContainer.appendChild(row);
+      scrollToBottom();
+    }
+
+    let lastAssistantMsg = null;
+    function appendAssistantMessage(text) {
+      if (!text || !text.trim()) return;
+      if (welcomeCard) welcomeCard.style.display = "none";
+
+      // Deduplicate if identical to immediate last message
+      if (lastAssistantMsg === text.trim()) return;
+      lastAssistantMsg = text.trim();
+
+      const row = document.createElement("div");
+      row.className = "message-row assistant";
+      row.innerHTML = `
+        <img class="msg-avatar assistant" src="/static/bujji_logo.jpg" alt="Bujji" />
+        <div class="msg-body">
+          <div class="msg-bubble">${escapeHtml(text)}</div>
+          <div class="msg-actions">
+            <button class="msg-action-btn copy-btn" onclick="copyMessageText(this, '${escapeForAttr(text)}')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+      `;
+      chatContainer.appendChild(row);
+      scrollToBottom();
+    }
+
+    function appendToolNotification(toolMsg) {
+      if (welcomeCard) welcomeCard.style.display = "none";
+
+      const row = document.createElement("div");
+      row.className = "message-row assistant";
+      row.innerHTML = `
+        <div class="msg-avatar assistant" style="visibility:hidden"></div>
+        <div class="msg-body">
+          <div class="tool-execution-pill">
+            <span>⚡</span>
+            <span>${escapeHtml(toolMsg)}</span>
+          </div>
+        </div>
+      `;
+      chatContainer.appendChild(row);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      chatScrollArea.scrollTop = chatScrollArea.scrollHeight;
+    }
+
+    window.copyMessageText = function(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<span>✓ Copied</span>`;
+        setTimeout(() => { btn.innerHTML = orig; }, 1500);
+      });
+    };
+
+    // Command Submission
+    async function submitCommand(cmd) {
+      if (!cmd || !cmd.trim()) return;
+      const text = cmd.trim();
+
+      appendUserMessage(text);
+      updateStatusBadge("thinking");
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "command", command: text }));
+      } else {
+        await fetch("/api/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: text })
+        });
+      }
+    }
+
+    chatForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const val = chatInput.value;
+      if (val.trim()) {
+        submitCommand(val);
+        chatInput.value = "";
+      }
+    });
+
+    // Preset / Suggestion Clicks
+    document.addEventListener("click", (e) => {
+      const card = e.target.closest("[data-cmd]");
+      if (card) {
+        const cmd = card.dataset.cmd;
+        if (cmd) submitCommand(cmd);
+      }
+    });
+
+    // Clear Chat
+    clearChatBtn.addEventListener("click", () => {
+      chatContainer.innerHTML = "";
+      if (welcomeCard) {
+        chatContainer.appendChild(welcomeCard);
+        welcomeCard.style.display = "flex";
+      }
+    });
+
+    // Master Agent Toggle
+    function setAgentActiveUI(active) {
+      agentActive = active;
+      if (agentActive) {
+        statusDot.style.background = "#10b981";
+        agentStatusLabel.textContent = "Agent Active";
+        toggleBtnText.textContent = "⏸ Stop Agent";
+        agentToggleBtn.className = "agent-toggle-btn";
+      } else {
+        statusDot.style.background = "#ef4444";
+        agentStatusLabel.textContent = "Agent Stopped";
+        toggleBtnText.textContent = "▶ Start Agent";
+        agentToggleBtn.className = "agent-toggle-btn stopped";
+      }
+    }
+
+    agentToggleBtn.addEventListener("click", async () => {
+      const target = !agentActive;
+      setAgentActiveUI(target);
+
+      try {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "toggle_agent", active: target }));
+        } else {
+          await fetch("/api/agent/toggle", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ active: target })
+          });
+        }
+      } catch (err) {
+        console.error("Toggle error:", err);
+      }
+    });
+
+    // Tap-to-Record Mic Button
+    recordBtn.addEventListener("click", () => {
+      if (!isRecording) {
+        startRecording();
+      } else {
+        stopRecording();
+      }
+    });
+
+    async function startRecording() {
+      try {
+        audioChunks = [];
+        recordStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : "audio/mp4";
+
+        mediaRecorder = new MediaRecorder(recordStream, { mimeType });
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: mimeType });
+          await uploadVoice(audioBlob);
+        };
+
+        mediaRecorder.start(200);
+        isRecording = true;
+
+        recordBtn.classList.add("recording");
+        updateStatusBadge("listening");
+        chatInput.placeholder = "Recording voice... Tap mic to send";
+
+      } catch (err) {
+        console.error("Mic permission error:", err);
+        alert("Please enable microphone permissions in your browser.");
+      }
+    }
+
+    function stopRecording() {
+      if (!isRecording || !mediaRecorder) return;
+      isRecording = false;
+
+      recordBtn.classList.remove("recording");
+      chatInput.placeholder = "Transcribing audio...";
+      updateStatusBadge("transcribing");
+
+      mediaRecorder.stop();
+      if (recordStream) {
+        recordStream.getTracks().forEach(t => t.stop());
+        recordStream = null;
+      }
+    }
+
+    async function uploadVoice(blob) {
+      const formData = new FormData();
+      formData.append("file", blob, "voice_command.webm");
+
+      try {
+        const res = await fetch("/api/voice_upload", {
+          method: "POST",
+          body: formData
+        });
+        const result = await res.json();
+        if (result.transcription) {
+          appendUserMessage(result.transcription);
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+      } finally {
+        chatInput.placeholder = "Ask Bujji anything or give a command (or tap mic)...";
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escapeForAttr(str) {
+      return String(str)
+        .replace(/'/g, "\\'")
+        .replace(/"/g, "&quot;")
+        .replace(/\n/g, " ");
+    }
+
+    // Init status
+    fetch("/status")
+      .then(r => r.json())
+      .then(d => {
+        if (typeof d.agent_active === "boolean") setAgentActiveUI(d.agent_active);
+        if (d.state) updateStatusBadge(d.state);
+      })
+      .catch(() => {});
+
+    connectWS();
+  </script>
+</body>
+</html>
