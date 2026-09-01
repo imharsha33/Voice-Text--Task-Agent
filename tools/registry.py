@@ -20,7 +20,7 @@ from observability.tracker import get_tracker
 
 def sleep_delay(seconds: float = 1.0) -> str:
     """Pause execution for given seconds."""
-    time.sleep(max(0.0, float(seconds)))
+    time.sleep(max(0.0, seconds))
     return f"Waited {seconds} seconds."
 
 

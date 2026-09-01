@@ -83,11 +83,23 @@ def main():
         log(f"TTS initialization notice: {e}", "warning")
 
     # ── 4. Command Processor (Voice In → Task Done → Immediate Text Out) ─────
-    def process_command(command_text: str):
-        """Processes voice/text command, executes task, and replies in TEXT ONLY immediately."""
+    def process_command(command_text: str, from_voice: bool = True):
+        """Processes voice/text command, executes task, and replies in TEXT ONLY immediately.
+
+        Args:
+            command_text: The command string to execute.
+            from_voice: True when triggered by the microphone listener.
+                        False when triggered from the dashboard UI (which already
+                        rendered the user bubble locally, so we must NOT echo it
+                        back via WebSocket or it shows twice).
+        """
         log(f"Command received: '{command_text}'", "voice")
         update_status("thinking", command_text)
-        send_chat_message("user", command_text)
+
+        # Only broadcast the user message when it came from voice — the UI already
+        # appended the bubble immediately on submit (prevents the double-message bug).
+        if from_voice:
+            send_chat_message("user", command_text)
 
         accumulated_response = []
 
@@ -117,8 +129,8 @@ def main():
             time.sleep(0.5)
             update_status("listening", "", "")
 
-    # Connect web dashboard command execution
-    set_command_processor(process_command)
+    # UI commands must NOT re-broadcast the user bubble (frontend already showed it)
+    set_command_processor(lambda cmd: process_command(cmd, from_voice=False))
 
     # ── 5. Start Voice Listener ────────────────────────────────────
     log("Starting Voice Listener...", "info")
