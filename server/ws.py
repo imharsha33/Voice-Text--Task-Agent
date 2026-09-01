@@ -108,6 +108,7 @@ class ConnectionManager:
         self.broadcast_sync({
             "type": "status",
             "state": state,
+            "agent_active": self.agent_status.get("agent_active", True),
             "command": self.agent_status.get("command", ""),
             "response": self.agent_status.get("response", "")
         })

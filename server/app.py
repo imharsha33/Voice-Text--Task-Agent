@@ -181,10 +181,26 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             try:
                 msg = json.loads(data)
-                if isinstance(msg, dict) and msg.get("type") == "command":
-                    cmd = msg.get("command", "").strip()
-                    if cmd and _command_processor:
-                        threading.Thread(target=_command_processor, args=(cmd,), daemon=True).start()
+                if isinstance(msg, dict):
+                    m_type = msg.get("type")
+                    if m_type == "command":
+                        cmd = msg.get("command", "").strip()
+                        if cmd and _command_processor:
+                            threading.Thread(target=_command_processor, args=(cmd,), daemon=True).start()
+                    elif m_type == "toggle_agent":
+                        target_active = bool(msg.get("active", True))
+                        manager.agent_status["agent_active"] = target_active
+                        if _listener_instance:
+                            if target_active:
+                                _listener_instance.resume()
+                                manager.update_status("listening")
+                                broadcast_log("info", "Agent resumed via dashboard")
+                            else:
+                                _listener_instance.pause()
+                                manager.update_status("idle")
+                                broadcast_log("info", "Agent paused via dashboard")
+                        else:
+                            manager.update_status("listening" if target_active else "idle")
             except Exception as ex:
                 pass
     except WebSocketDisconnect:

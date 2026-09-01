@@ -839,12 +839,14 @@
     }
 
     // Chat Message Rendering
-    let lastUserMsg = null;
+    const renderedMessages = new Set();
+
     function appendUserMessage(text) {
       if (!text || !text.trim()) return;
-      if (lastUserMsg === text.trim()) return;
-      lastUserMsg = text.trim();
-      lastAssistantMsg = null; // Reset assistant deduplication for new command
+      const clean = text.trim();
+      const key = "u:" + clean;
+      if (renderedMessages.has(key)) return;
+      renderedMessages.add(key);
 
       if (welcomeCard) welcomeCard.style.display = "none";
 
@@ -852,29 +854,30 @@
       row.className = "message-row user";
       row.innerHTML = `
         <div class="msg-body">
-          <div class="msg-bubble">${escapeHtml(text)}</div>
+          <div class="msg-bubble">${escapeHtml(clean)}</div>
         </div>
       `;
       chatContainer.appendChild(row);
       scrollToBottom();
     }
 
-    let lastAssistantMsg = null;
     function appendAssistantMessage(text) {
       if (!text || !text.trim()) return;
-      if (welcomeCard) welcomeCard.style.display = "none";
+      const clean = text.trim();
+      const key = "a:" + clean;
+      if (renderedMessages.has(key)) return;
+      renderedMessages.add(key);
 
-      if (lastAssistantMsg === text.trim()) return;
-      lastAssistantMsg = text.trim();
+      if (welcomeCard) welcomeCard.style.display = "none";
 
       const row = document.createElement("div");
       row.className = "message-row assistant";
       row.innerHTML = `
         <img class="msg-avatar assistant" src="/static/bujji_logo.jpg" alt="Bujji" />
         <div class="msg-body">
-          <div class="msg-bubble">${escapeHtml(text)}</div>
+          <div class="msg-bubble">${escapeHtml(clean)}</div>
           <div class="msg-actions">
-            <button class="msg-action-btn copy-btn" onclick="copyMessageText(this, '${escapeForAttr(text)}')">
+            <button class="msg-action-btn copy-btn" onclick="copyMessageText(this, '${escapeForAttr(clean)}')">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -961,6 +964,7 @@
 
     // Clear Chat
     clearChatBtn.addEventListener("click", () => {
+      renderedMessages.clear();
       chatContainer.innerHTML = "";
       if (welcomeCard) {
         chatContainer.appendChild(welcomeCard);
@@ -991,13 +995,12 @@
       try {
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: "toggle_agent", active: target }));
-        } else {
-          await fetch("/api/agent/toggle", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ active: target })
-          });
         }
+        await fetch("/api/agent/toggle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active: target })
+        });
       } catch (err) {
         console.error("Toggle error:", err);
       }
@@ -1119,7 +1122,6 @@
       .catch(() => {});
 
     syncChat();
-    setInterval(syncChat, 2000);
     connectWS();
   </script>
 </body>
