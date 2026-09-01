@@ -90,8 +90,11 @@ class ConnectionManager:
         """Broadcast an immediate chat message directly to UI."""
         if not text or not str(text).strip():
             return
+        import uuid
+        msg_id = f"msg_{int(time.time()*1000)}_{str(uuid.uuid4())[:6]}"
         entry = {
             "type": "chat_message",
+            "id": msg_id,
             "role": role,
             "text": str(text).strip(),
             "timestamp": time.strftime("%H:%M:%S")

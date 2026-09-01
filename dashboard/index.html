@@ -796,9 +796,9 @@
     function handleServerMessage(data) {
       if (data.type === "chat_message") {
         if (data.role === "user") {
-          appendUserMessage(data.text);
+          appendUserMessage(data.text, data.id);
         } else {
-          appendAssistantMessage(data.text);
+          appendAssistantMessage(data.text, data.id);
         }
       } else if (data.type === "status") {
         updateStatusBadge(data.state);
@@ -812,14 +812,12 @@
         }
         if (Array.isArray(data.chat_history)) {
           data.chat_history.forEach(item => {
-            if (item.role === "user") appendUserMessage(item.text);
-            else appendAssistantMessage(item.text);
+            if (item.role === "user") appendUserMessage(item.text, item.id);
+            else appendAssistantMessage(item.text, item.id);
           });
         }
-      } else if (data.type === "log") {
-        if (data.level === "tool") {
-          appendToolNotification(data.message);
-        }
+      } else if (data.level === "tool") {
+        appendToolNotification(data.message);
       }
     }
 
@@ -839,14 +837,14 @@
     }
 
     // Chat Message Rendering
-    const renderedMessages = new Set();
+    const renderedMsgIds = new Set();
 
-    function appendUserMessage(text) {
+    function appendUserMessage(text, id = null) {
       if (!text || !text.trim()) return;
       const clean = text.trim();
-      const key = "u:" + clean;
-      if (renderedMessages.has(key)) return;
-      renderedMessages.add(key);
+      const msgId = id || ("u_" + Date.now() + "_" + Math.floor(Math.random()*1000));
+      if (renderedMsgIds.has(msgId)) return;
+      renderedMsgIds.add(msgId);
 
       if (welcomeCard) welcomeCard.style.display = "none";
 
@@ -861,12 +859,12 @@
       scrollToBottom();
     }
 
-    function appendAssistantMessage(text) {
+    function appendAssistantMessage(text, id = null) {
       if (!text || !text.trim()) return;
       const clean = text.trim();
-      const key = "a:" + clean;
-      if (renderedMessages.has(key)) return;
-      renderedMessages.add(key);
+      const msgId = id || ("a_" + Date.now() + "_" + Math.floor(Math.random()*1000));
+      if (renderedMsgIds.has(msgId)) return;
+      renderedMsgIds.add(msgId);
 
       if (welcomeCard) welcomeCard.style.display = "none";
 
