@@ -5,6 +5,7 @@ Provides REST API, WebSocket streams, and dashboard static files.
 
 import os
 import io
+import json
 import time
 import threading
 from pathlib import Path
@@ -168,8 +169,6 @@ async def transcribe_audio_file(file: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
-
-import json
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

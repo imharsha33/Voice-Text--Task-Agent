@@ -141,31 +141,33 @@ class MacOSAppController(BaseAppController):
         script = f'tell application "{resolved}" to activate'
         result = run_applescript(script)
 
-        if "error" in result.lower():
-            # Fallback 1: open -a
-            try:
-                res = subprocess.run(["open", "-a", resolved], capture_output=True, text=True)
-                if res.returncode == 0:
-                    return f"Opened {resolved}"
-            except Exception:
-                pass
+        if "error" not in result.lower():
+            return f"Opened {resolved}"
 
-            # Fallback 2: search with mdfind / Spotlight
-            try:
-                find_res = subprocess.run(
-                    ["mdfind", f"kMDItemKind == 'Application' && kMDItemDisplayName == '*{resolved}*'c"],
-                    capture_output=True, text=True
-                )
-                paths = [p for p in find_res.stdout.strip().split("\n") if p.endswith(".app")]
-                if paths:
-                    subprocess.run(["open", paths[0]])
+        # Fallback 1: open -a
+        try:
+            res = subprocess.run(["open", "-a", resolved], capture_output=True, text=True)
+            if res.returncode == 0:
+                return f"Opened {resolved}"
+        except Exception:
+            pass
+
+        # Fallback 2: search with mdfind / Spotlight
+        try:
+            find_res = subprocess.run(
+                ["mdfind", f"kMDItemKind == 'Application' && kMDItemDisplayName == '*{resolved}*'c"],
+                capture_output=True, text=True
+            )
+            paths = [p for p in find_res.stdout.strip().split("\n") if p.endswith(".app")]
+            if paths:
+                open_res = subprocess.run(["open", paths[0]], capture_output=True, text=True)
+                if open_res.returncode == 0:
                     return f"Opened {resolved} via {paths[0]}"
-            except Exception:
-                pass
+        except Exception:
+            pass
 
-            return f"Could not find or open application: '{app_name}'"
-
-        return f"Opened {resolved}"
+        # BUG-12 fix: all fallbacks exhausted — return explicit failure (not silent false success)
+        return f"Could not find or open application: '{app_name}'. Please check that it is installed."
 
     def close_application(self, app_name: str, confirm: bool = False) -> str:
         """Quit a macOS application gracefully or terminate it."""

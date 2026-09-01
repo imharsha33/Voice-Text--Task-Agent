@@ -121,8 +121,9 @@ class MacOSSystemController(BaseSystemController):
             try:
                 subprocess.run(["pmset", "displaysleepnow"], check=True)
                 return "Screen locked"
-            except Exception:
-                pass
+            except Exception as e:
+                # BUG-20 fix: return error instead of false success
+                return f"Failed to lock screen: {e}"
         return "Screen locked"
 
     def sleep_system(self) -> str:
@@ -225,9 +226,12 @@ class MacOSSystemController(BaseSystemController):
         """Create a new reminder in Apple Reminders."""
         t_clean = title.replace('"', '\\"')
         if due_date:
+            # BUG-06 fix: actually set the due date on the reminder object
+            d_clean = due_date.replace('"', '\\"')
             script = f'''
             tell application "Reminders"
                 set newReminder to make new reminder with properties {{name:"{t_clean}"}}
+                set due date of newReminder to date "{d_clean}"
             end tell
             '''
         else:

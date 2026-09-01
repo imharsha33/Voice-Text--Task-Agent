@@ -1111,6 +1111,10 @@
         .catch(() => {});
     }
 
+    // BUG-18 fix: Removed syncChat() startup call.
+    // Chat history is loaded exclusively via the WebSocket 'init' event which
+    // carries full chat_history with IDs, preventing duplicate rendering.
+    // syncChat() function kept for potential debug use only.
     fetch("/status")
       .then(r => r.json())
       .then(d => {
@@ -1119,7 +1123,6 @@
       })
       .catch(() => {});
 
-    syncChat();
     connectWS();
   </script>
 </body>

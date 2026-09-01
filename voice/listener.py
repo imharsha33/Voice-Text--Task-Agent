@@ -144,10 +144,13 @@ class VoiceListener:
                     if clean_text:
                         self._log(f"🗣️ Transcribed: '{clean_text}'")
 
-                        # Strip wake word if present, or accept direct command
+                        # Strip wake word if present — operate on lowercased copy
+                        # to avoid Unicode byte-offset misalignment (BUG-09)
                         lower = clean_text.lower()
                         if lower.startswith(self.wake_word):
-                            clean_text = clean_text[len(self.wake_word):].strip().lstrip(",.!? ")
+                            # Slice from the lowercased version, then re-apply
+                            stripped_lower = lower[len(self.wake_word):].strip().lstrip(",.!? ")
+                            clean_text = stripped_lower
 
                         if clean_text:
                             self.callback(clean_text)
@@ -155,5 +158,7 @@ class VoiceListener:
                         self._log("No speech recognized in audio clip.")
 
             except Exception as e:
+                # BUG-01 fix: always log listen-loop errors so failures are visible
+                self._log(f"⚠️ Listen loop error: {type(e).__name__}: {e}")
                 if self.running and not self.paused:
                     time.sleep(0.5)

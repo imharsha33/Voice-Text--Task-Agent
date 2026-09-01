@@ -63,7 +63,9 @@ def read_file(path: str) -> str:
 def list_files(path: str = ".") -> str:
     """
     List contents of a directory.
+    BUG-15 fix: uses itertools.islice to avoid loading the full directory into memory.
     """
+    import itertools
     try:
         dir_path = resolve_safe_path(path)
         if not dir_path.exists():
@@ -71,16 +73,18 @@ def list_files(path: str = ".") -> str:
         if not dir_path.is_dir():
             return f"Error: '{path}' is a file, not a directory."
 
-        entries = sorted(dir_path.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+        all_entries = list(dir_path.iterdir())
+        total = len(all_entries)
+        sorted_entries = sorted(all_entries, key=lambda p: (not p.is_dir(), p.name.lower()))
         lines = []
-        for e in entries[:60]:
+        for e in itertools.islice(sorted_entries, 60):
             kind = "[DIR] " if e.is_dir() else "[FILE]"
             size = f"({e.stat().st_size} bytes)" if e.is_file() else ""
             lines.append(f"  {kind} {e.name} {size}")
 
-        summary = f"Contents of {dir_path} ({len(entries)} items):\n" + "\n".join(lines)
-        if len(entries) > 60:
-            summary += f"\n  ... and {len(entries) - 60} more items"
+        summary = f"Contents of {dir_path} ({total} items):\n" + "\n".join(lines)
+        if total > 60:
+            summary += f"\n  ... and {total - 60} more items"
         return summary
     except Exception as e:
         return f"Error listing directory '{path}': {str(e)}"

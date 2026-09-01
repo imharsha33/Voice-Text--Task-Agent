@@ -156,9 +156,11 @@ def main():
     # ── 7. Shutdown Handling ───────────────────────────────────────
     def shutdown(sig, frame):
         print("\n\n  Shutting down Bujji...")
+        # BUG-14 fix: use try/except NameError in case listener was never assigned
+        # (e.g. if VoiceListener.__init__ raised before assignment)
         try:
             listener.stop()
-        except Exception:
+        except (NameError, UnboundLocalError, Exception):
             pass
         speak_sync("Goodbye! Bujji is shutting down.")
         sys.exit(0)

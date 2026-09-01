@@ -4,6 +4,7 @@ Provides browser control, YouTube playback, Google search, and page extraction.
 """
 
 import asyncio
+import threading
 import time
 import urllib.parse
 from typing import Optional, Dict, Any
@@ -12,7 +13,9 @@ from playwright.async_api import async_playwright, Browser, Page, Playwright
 _playwright: Optional[Playwright] = None
 _browser: Optional[Browser] = None
 _page: Optional[Page] = None
-_loop: Optional[asyncio.AbstractEventLoop] = None
+# BUG-04 fix: use thread-local storage for event loops instead of a single global loop.
+# asyncio.set_event_loop() from a worker thread corrupts FastAPI's event loop.
+_thread_local = threading.local()
 
 
 async def _ensure_browser() -> Page:
@@ -43,12 +46,15 @@ async def _ensure_browser() -> Page:
 
 
 def _run_async(coro):
-    """Run async coroutine in a managed event loop."""
-    global _loop
-    if _loop is None or _loop.is_closed():
-        _loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(_loop)
-    return _loop.run_until_complete(coro)
+    """Run async coroutine in a thread-local managed event loop.
+    BUG-04 fix: uses thread-local loop instead of set_event_loop() so we
+    never overwrite FastAPI/uvicorn's global event loop from worker threads.
+    """
+    loop = getattr(_thread_local, "loop", None)
+    if loop is None or loop.is_closed():
+        loop = asyncio.new_event_loop()
+        _thread_local.loop = loop
+    return loop.run_until_complete(coro)
 
 
 async def _open_url_async(url: str) -> str:
@@ -164,8 +170,12 @@ def get_page_content() -> str:
 
 
 def web_quick_search(query: str) -> str:
-    """Quick search using httpx duckduckgo instant answer or google scrape."""
+    """Quick search using httpx DuckDuckGo instant answer.
+    BUG-11 fix: fallback is now a lightweight Google HTTP scrape instead of
+    launching the full Playwright browser window.
+    """
     import httpx
+    import re
     try:
         encoded = urllib.parse.quote(query)
         resp = httpx.get(
@@ -174,11 +184,30 @@ def web_quick_search(query: str) -> str:
             timeout=8.0
         )
         if resp.status_code == 200:
-            import re
             snippets = re.findall(r'<a class="result__snippet[^>]*>(.*?)</a>', resp.text, re.DOTALL)
             clean_snippets = [re.sub(r'<[^>]+>', '', s).strip() for s in snippets[:3] if s.strip()]
             if clean_snippets:
-                return "\n".join(f"• {s}" for s in clean_snippets)
+                return "\n".join(f"\u2022 {s}" for s in clean_snippets)
     except Exception:
         pass
-    return search_google(query)
+
+    # Lightweight HTTP fallback: scrape Google results without launching a browser
+    try:
+        encoded = urllib.parse.quote(query)
+        resp = httpx.get(
+            f"https://www.google.com/search?q={encoded}",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+            timeout=8.0,
+            follow_redirects=True
+        )
+        if resp.status_code == 200:
+            import re
+            # Extract visible text snippets from Google HTML
+            snippets = re.findall(r'<div class="[^"]*VwiC3b[^"]*"[^>]*>(.*?)</div>', resp.text, re.DOTALL)
+            clean = [re.sub(r'<[^>]+>', '', s).strip() for s in snippets[:3] if s.strip()]
+            if clean:
+                return "\n".join(f"\u2022 {s}" for s in clean)
+    except Exception:
+        pass
+
+    return f"Could not find results for '{query}'. Try a more specific search."

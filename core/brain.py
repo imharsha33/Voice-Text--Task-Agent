@@ -153,11 +153,21 @@ class AgentBrain:
             except Exception as e:
                 error_msg = f"Brain execution error: {str(e)}"
                 self._log(f"❌ {error_msg}")
+                # BUG-02 fix: always append a matching assistant reply so conversation
+                # history is never left with an orphaned user turn that confuses the LLM
+                self.conversation_history.append({
+                    "role": "assistant",
+                    "content": "I ran into an issue and could not complete that request."
+                })
+                if len(self.conversation_history) > 16:
+                    self.conversation_history = self.conversation_history[-16:]
                 tracker.finish_task(task_id=task_id, success=False, error=error_msg)
                 return "I ran into an issue executing that command. Please try again."
 
-        tracker.finish_task(task_id=task_id, success=True)
-        return "I completed the requested tasks."
+        # BUG-17 fix: loop exhausted without a final text response — mark as incomplete, not success
+        self._log("\u26a0\ufe0f Max iterations reached without a final response.")
+        tracker.finish_task(task_id=task_id, success=False, error="Max iterations reached")
+        return "I worked through several steps but couldn't produce a final answer. Please try rephrasing your request."
 
     def clear_history(self):
         """Clear conversation memory."""

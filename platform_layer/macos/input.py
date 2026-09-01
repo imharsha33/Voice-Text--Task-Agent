@@ -140,8 +140,15 @@ class MacOSInputController(BaseInputController):
     def copy_to_clipboard(self, text: str) -> str:
         """Copy text to macOS clipboard using pbcopy."""
         try:
-            p = subprocess.Popen(["pbcopy"], stdin=subprocess.PIPE)
-            p.communicate(text.encode("utf-8"))
+            # BUG-07 fix: use run() with check so we detect pbcopy failure
+            result = subprocess.run(
+                ["pbcopy"],
+                input=text.encode("utf-8"),
+                capture_output=True,
+                timeout=5
+            )
+            if result.returncode != 0:
+                return f"Clipboard error: pbcopy returned exit code {result.returncode}"
             return "Copied to clipboard"
         except Exception as e:
             return f"Clipboard error: {str(e)}"

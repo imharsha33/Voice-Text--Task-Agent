@@ -625,6 +625,11 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> str:
             call_kwargs = {k: v for k, v in arguments.items() if k in params}
 
         res = fn(**call_kwargs)
+        # BUG-16 fix: serialize dict/list results as proper JSON instead of Python repr
+        # (Python str(dict) produces single-quoted strings that confuse the LLM)
+        if isinstance(res, (dict, list)):
+            import json as _json
+            return _json.dumps(res, default=str, ensure_ascii=False)
         return str(res)
     except Exception as e:
         success = False

@@ -6,6 +6,7 @@ Manages connected dashboard clients and broadcasts real-time telemetry.
 import asyncio
 import json
 import time
+import uuid
 from collections import deque
 from typing import Set, Dict, Any, List, Optional
 from fastapi import WebSocket
@@ -59,23 +60,16 @@ class ConnectionManager:
             self.active_connections.discard(d)
 
     def broadcast_sync(self, message: Dict[str, Any]):
-        """Safely broadcast from ANY worker thread using the server's event loop."""
+        """Safely broadcast from ANY worker thread using the server's event loop.
+        BUG-03 fix: removed deprecated asyncio.get_event_loop() fallback which raises
+        RuntimeError in Python 3.10+ from background threads. Exclusively use self.loop.
+        """
         try:
             if self.loop and self.loop.is_running():
-                future = asyncio.run_coroutine_threadsafe(self.broadcast(message), self.loop)
+                asyncio.run_coroutine_threadsafe(self.broadcast(message), self.loop)
                 return
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.run_coroutine_threadsafe(self.broadcast(message), loop)
-            else:
-                loop.run_until_complete(self.broadcast(message))
         except Exception as e:
-            # Fallback if no loop in current thread
-            if self.loop:
-                try:
-                    asyncio.run_coroutine_threadsafe(self.broadcast(message), self.loop)
-                except Exception:
-                    pass
+            pass  # Loop may have closed; message is silently dropped
 
     def add_log(self, level: str, message: str):
         entry = {
@@ -90,7 +84,7 @@ class ConnectionManager:
         """Broadcast an immediate chat message directly to UI."""
         if not text or not str(text).strip():
             return
-        import uuid
+        # BUG-13 fix: uuid import moved to module top level (no per-call import overhead)
         msg_id = f"msg_{int(time.time()*1000)}_{str(uuid.uuid4())[:6]}"
         entry = {
             "type": "chat_message",

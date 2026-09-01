@@ -16,6 +16,12 @@ from platform_layer import get_platform
 DANGEROUS_PATTERNS = [
     # Filesystem wiping & mass deletion
     (r"\brm\s+-(?:r[fF]|f[rR]|rf|fr)\b", "Recursive forced file deletion ('rm -rf')"),
+    # BUG-10 fix: also catch separate flag variants like 'rm -r -f' and long flags
+    (r"\brm\s+(-\w+\s+)*-[rR]\b.*-[fF]\b", "Recursive forced deletion (rm -r -f)"),
+    (r"\brm\s+(-\w+\s+)*-[fF]\b.*-[rR]\b", "Recursive forced deletion (rm -f -r)"),
+    (r"\brm\s+--recursive\b", "Recursive deletion ('rm --recursive')"),
+    (r"\brm\s+--force\b.*--recursive\b", "Recursive forced deletion (rm --force --recursive)"),
+    (r"\brm\s+--recursive\b.*--force\b", "Recursive forced deletion (rm --recursive --force)"),
     (r"\brm\s+-[fF]\s+/[^\s]*", "Forced root/system deletion"),
     (r"\bdel\s+/[sfqSFQ]\b", "Windows forced recursive file deletion ('del /s /q')"),
     (r"\brd\s+/[sqSQ]\b", "Windows directory tree removal ('rd /s /q')"),
