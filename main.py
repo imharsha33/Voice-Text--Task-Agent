@@ -101,12 +101,12 @@ def main():
             response = brain.process_command(command_text, chunk_callback=on_chunk)
 
             log(f"Task completed: {response}", "success")
-            broadcast_log("success", f"Task Done: {response}")
+            broadcast_log("assistant", response)
             update_status("idle", command_text, response)
 
             # Return directly to listening mode without TTS speech delay
             time.sleep(0.4)
-            update_status("listening")
+            update_status("listening", "", response)
 
         except Exception as e:
             error_msg = f"Error processing command: {e}"

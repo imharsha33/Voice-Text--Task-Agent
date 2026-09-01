@@ -796,10 +796,10 @@
     function handleServerMessage(data) {
       if (data.type === "status") {
         updateStatusBadge(data.state);
-        if (data.command && data.state === "thinking") {
+        if (data.command && (data.state === "thinking" || data.state === "acting")) {
           appendUserMessage(data.command);
         }
-        if (data.response && (data.state === "speaking" || data.state === "idle")) {
+        if (data.response && data.response.trim()) {
           appendAssistantMessage(data.response);
         }
         if (typeof data.agent_active === "boolean") {
@@ -813,7 +813,14 @@
       } else if (data.type === "log") {
         if (data.level === "tool") {
           appendToolNotification(data.message);
+        } else if (data.level === "assistant" || data.level === "response") {
+          appendAssistantMessage(data.message);
+        } else if (data.level === "success" && data.message && data.message.startsWith("Task Done: ")) {
+          appendAssistantMessage(data.message.replace("Task Done: ", ""));
         }
+      } else if (data.type === "response" || data.type === "assistant_message") {
+        const txt = data.content || data.message || data.text;
+        if (txt) appendAssistantMessage(txt);
       }
     }
 
