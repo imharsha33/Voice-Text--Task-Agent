@@ -1,6 +1,6 @@
 """
 input.py — macOS Synthetic Input, Mouse, Keyboard, and Clipboard Controller
-Implements BaseInputController using PyAutoGUI and macOS clipboard utilities.
+Implements BaseInputController using macOS screencapture CLI, PyAutoGUI, and macOS clipboard utilities.
 """
 
 import time
@@ -99,20 +99,31 @@ class MacOSInputController(BaseInputController):
             return f"Error scrolling: {str(e)}"
 
     def take_screenshot(self, save_path: Optional[Path] = None) -> str:
-        """Take screenshot and save to disk."""
+        """Take screenshot and save to disk using native macOS screencapture."""
         try:
             if save_path is None:
                 desktop = Path.home() / "Desktop"
                 desktop.mkdir(parents=True, exist_ok=True)
                 filename = f"screenshot_{int(time.time())}.png"
-                save_path = desktop / filename
+                target_path = desktop / filename
             else:
-                save_path = Path(save_path).expanduser().resolve()
-                save_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path = Path(save_path).expanduser().resolve()
+                target_path.parent.mkdir(parents=True, exist_ok=True)
 
+            # Native macOS screencapture tool (silent, zero-dependency, works directly)
+            res = subprocess.run(
+                ["/usr/sbin/screencapture", "-x", str(target_path)],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if res.returncode == 0 and target_path.exists():
+                return f"Screenshot saved to {target_path}"
+
+            # Fallback to PyAutoGUI / PIL if screencapture not found
             img = pyautogui.screenshot()
-            img.save(str(save_path))
-            return f"Screenshot saved to {save_path}"
+            img.save(str(target_path))
+            return f"Screenshot saved to {target_path}"
         except Exception as e:
             return f"Error taking screenshot: {str(e)}"
 

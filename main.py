@@ -81,74 +81,39 @@ def main():
     except Exception as e:
         log(f"TTS initialization notice: {e}", "warning")
 
-    # ── 4. Command Processor ───────────────────────────────────────
+    # ── 4. Command Processor (Voice In → Task Done → Text Out) ─────
     def process_command(command_text: str):
-        """Processes voice or text commands with streaming sentence-by-sentence TTS."""
+        """Processes voice/text command, executes task, and replies in TEXT ONLY (silent completion)."""
         log(f"Command received: '{command_text}'", "voice")
         update_status("thinking", command_text)
         broadcast_log("voice", f"Command: {command_text}")
 
-        tts_player = TTSQueuePlayer()
-        tts_player.start()
-
         accumulated_response = []
-        sentence_buffer = []
 
         def on_chunk(token: str):
-            nonlocal sentence_buffer
             accumulated_response.append(token)
             full_text = "".join(accumulated_response)
-
-            # Stream response in real-time to web UI
-            update_status("speaking", command_text, full_text)
-
-            # Sentence chunking
-            sentence_buffer.append(token)
-            buffered_text = "".join(sentence_buffer)
-
-            # Split on standard punctuation or newlines
-            if any(p in buffered_text for p in ['. ', '? ', '! ', '\n']):
-                for i in range(len(buffered_text) - 1):
-                    if buffered_text[i] in ['.', '?', '!'] and buffered_text[i+1].isspace():
-                        sentence = buffered_text[:i+1].strip()
-                        sentence_buffer = [buffered_text[i+1:]]
-                        tts_player.speak_sentence(sentence)
-                        break
-                    elif buffered_text[i] == '\n':
-                        sentence = buffered_text[:i].strip()
-                        sentence_buffer = [buffered_text[i+1:]]
-                        tts_player.speak_sentence(sentence)
-                        break
-            elif len(buffered_text) > 140 and token.endswith(' '):
-                last_space = buffered_text.rfind(' ')
-                if last_space != -1:
-                    sentence = buffered_text[:last_space].strip()
-                    sentence_buffer = [buffered_text[last_space+1:]]
-                    tts_player.speak_sentence(sentence)
+            # Stream text response in real-time to web UI
+            update_status("acting", command_text, full_text)
 
         try:
             update_status("acting", command_text)
             response = brain.process_command(command_text, chunk_callback=on_chunk)
 
-            # Speak leftover tokens
-            final_leftover = "".join(sentence_buffer).strip()
-            if final_leftover:
-                tts_player.speak_sentence(final_leftover)
+            log(f"Task completed: {response}", "success")
+            broadcast_log("success", f"Task Done: {response}")
+            update_status("idle", command_text, response)
 
-            broadcast_log("success", f"Response: {response}")
-            tts_player.stop(wait=True)
-
-            # Pause briefly to prevent echo from microphone
-            time.sleep(1.2)
+            # Return directly to listening mode without TTS speech delay
+            time.sleep(0.4)
             update_status("listening")
 
         except Exception as e:
-            tts_player.stop(wait=False)
             error_msg = f"Error processing command: {e}"
             log(error_msg, "error")
-            speak_sync("Sorry, I encountered an error. Please try again.")
+            broadcast_log("error", error_msg)
             update_status("error", command_text, error_msg)
-            time.sleep(1.2)
+            time.sleep(0.5)
             update_status("listening")
 
     # Connect web dashboard command execution
