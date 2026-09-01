@@ -840,7 +840,13 @@
     }
 
     // Chat Message Rendering
+    let lastUserMsg = null;
     function appendUserMessage(text) {
+      if (!text || !text.trim()) return;
+      if (lastUserMsg === text.trim()) return;
+      lastUserMsg = text.trim();
+      lastAssistantMsg = null; // Reset assistant deduplication for new command
+
       if (welcomeCard) welcomeCard.style.display = "none";
 
       const row = document.createElement("div");
@@ -921,14 +927,18 @@
       appendUserMessage(text);
       updateStatusBadge("thinking");
 
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "command", command: text }));
-      } else {
-        await fetch("/api/command", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ command: text })
-        });
+      try {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "command", command: text }));
+        } else {
+          await fetch("/api/command", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command: text })
+          });
+        }
+      } catch (err) {
+        console.error("Submit error:", err);
       }
     }
 

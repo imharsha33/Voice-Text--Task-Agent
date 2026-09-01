@@ -152,6 +152,8 @@ async def transcribe_audio_file(file: UploadFile = File(...)):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+import json
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time telemetry."""
@@ -161,12 +163,12 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             try:
-                msg = uvicorn.json.loads(data) if hasattr(uvicorn, "json") else eval(data)
+                msg = json.loads(data)
                 if isinstance(msg, dict) and msg.get("type") == "command":
                     cmd = msg.get("command", "").strip()
                     if cmd and _command_processor:
                         threading.Thread(target=_command_processor, args=(cmd,), daemon=True).start()
-            except Exception:
+            except Exception as ex:
                 pass
     except WebSocketDisconnect:
         manager.disconnect(websocket)
