@@ -77,6 +77,7 @@ def main():
     try:
         log("TTS engine ready ✓", "success")
         speak_sync("Hello there! How can I help you today?")
+        time.sleep(0.5)
     except Exception as e:
         log(f"TTS initialization notice: {e}", "warning")
 

@@ -5,13 +5,14 @@ Zero-dependency voice feedback for macOS.
 
 import subprocess
 import threading
+import time
 from voice.tts.base import BaseTTS
 
 
 class MacOSTTS(BaseTTS):
     """macOS Text-to-Speech implementation using /usr/bin/say."""
 
-    def __init__(self, voice: str = "Samantha", rate: int = 180):
+    def __init__(self, voice: str = "Samantha", rate: int = 175):
         self.voice = voice
         self.rate = rate
 
@@ -33,5 +34,6 @@ class MacOSTTS(BaseTTS):
 
         if blocking:
             _speak()
+            time.sleep(0.35)
         else:
             threading.Thread(target=_speak, daemon=True).start()
