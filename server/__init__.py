@@ -5,6 +5,7 @@ from server.app import (
     start_server_background,
     update_status,
     broadcast_log,
+    send_chat_message,
     set_command_processor,
     set_listener_instance,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "start_server_background",
     "update_status",
     "broadcast_log",
+    "send_chat_message",
     "set_command_processor",
     "set_listener_instance",
 ]

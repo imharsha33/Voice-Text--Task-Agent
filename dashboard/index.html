@@ -794,12 +794,18 @@
     }
 
     function handleServerMessage(data) {
-      if (data.type === "status") {
+      if (data.type === "chat_message") {
+        if (data.role === "user") {
+          appendUserMessage(data.text);
+        } else {
+          appendAssistantMessage(data.text);
+        }
+      } else if (data.type === "status") {
         updateStatusBadge(data.state);
         if (data.command && (data.state === "thinking" || data.state === "acting")) {
           appendUserMessage(data.command);
         }
-        if (data.response && data.response.trim()) {
+        if (data.response && data.response.trim() && (data.state === "idle" || data.state === "acting")) {
           appendAssistantMessage(data.response);
         }
         if (typeof data.agent_active === "boolean") {

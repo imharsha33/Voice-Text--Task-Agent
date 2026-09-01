@@ -66,6 +66,15 @@ class ConnectionManager:
         self.log_buffer.append(entry)
         self.broadcast_sync({"type": "log", **entry})
 
+    def send_chat_message(self, role: str, text: str):
+        """Broadcast an immediate chat message directly to UI."""
+        self.broadcast_sync({
+            "type": "chat_message",
+            "role": role,
+            "text": text,
+            "timestamp": time.strftime("%H:%M:%S")
+        })
+
     def update_status(self, state: str, command: str = "", response: str = ""):
         self.agent_status["state"] = state
         if command:

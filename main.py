@@ -23,6 +23,7 @@ from server import (
     start_server_background,
     update_status,
     broadcast_log,
+    send_chat_message,
     set_command_processor,
     set_listener_instance,
 )
@@ -81,19 +82,18 @@ def main():
     except Exception as e:
         log(f"TTS initialization notice: {e}", "warning")
 
-    # ── 4. Command Processor (Voice In → Task Done → Text Out) ─────
+    # ── 4. Command Processor (Voice In → Task Done → Immediate Text Out) ─────
     def process_command(command_text: str):
-        """Processes voice/text command, executes task, and replies in TEXT ONLY (silent completion)."""
+        """Processes voice/text command, executes task, and replies in TEXT ONLY immediately."""
         log(f"Command received: '{command_text}'", "voice")
         update_status("thinking", command_text)
-        broadcast_log("voice", f"Command: {command_text}")
+        send_chat_message("user", command_text)
 
         accumulated_response = []
 
         def on_chunk(token: str):
             accumulated_response.append(token)
             full_text = "".join(accumulated_response)
-            # Stream text response in real-time to web UI
             update_status("acting", command_text, full_text)
 
         try:
@@ -101,20 +101,21 @@ def main():
             response = brain.process_command(command_text, chunk_callback=on_chunk)
 
             log(f"Task completed: {response}", "success")
-            broadcast_log("assistant", response)
+            # Immediate text message delivered to chat the second the task is completed
+            send_chat_message("assistant", response)
             update_status("idle", command_text, response)
 
             # Return directly to listening mode without TTS speech delay
-            time.sleep(0.4)
-            update_status("listening", "", response)
+            time.sleep(0.3)
+            update_status("listening", "", "")
 
         except Exception as e:
             error_msg = f"Error processing command: {e}"
             log(error_msg, "error")
-            broadcast_log("error", error_msg)
+            send_chat_message("assistant", f"Sorry, I encountered an error: {error_msg}")
             update_status("error", command_text, error_msg)
             time.sleep(0.5)
-            update_status("listening")
+            update_status("listening", "", "")
 
     # Connect web dashboard command execution
     set_command_processor(process_command)

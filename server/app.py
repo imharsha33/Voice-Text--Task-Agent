@@ -55,6 +55,11 @@ def broadcast_log(level: str, message: str):
     get_ws_manager().add_log(level, message)
 
 
+def send_chat_message(role: str, text: str):
+    """Broadcast immediate chat message to dashboard UI."""
+    get_ws_manager().send_chat_message(role, text)
+
+
 # Connect observability broadcast callback
 set_broadcast_callback(broadcast_log)
 
