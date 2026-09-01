@@ -181,7 +181,6 @@ def main():
 
     # ── 6. Ready State ─────────────────────────────────────────────
     log("Bujji is ready! Just start speaking to give a command.", "success")
-    speak_async("Hey! Bujji is online and ready.")
 
     print(f"\n  ✅ Bujji is listening for commands on {current_os}")
     print(f"  📊 Dashboard: http://localhost:{port}")
