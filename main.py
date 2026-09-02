@@ -83,6 +83,10 @@ def main():
         log(f"TTS initialization notice: {e}", "warning")
 
     # ── 4. Command Processor (Voice In → Task Done → Immediate Text Out) ─────
+    import threading as _threading
+    _recent_commands: dict = {}  # text → timestamp of last processing start
+    _cmd_dedup_window: float = 3.0  # seconds — ignore identical command within this window
+
     def process_command(command_text: str, from_voice: bool = True):
         """Processes voice/text command, executes task, and replies in TEXT ONLY immediately.
 
@@ -93,6 +97,20 @@ def main():
                         rendered the user bubble locally, so we must NOT echo it
                         back via WebSocket or it shows twice).
         """
+        # FIX-A: Deduplicate identical commands received within the dedup window
+        # (prevents voice + ws echo from triggering two parallel brain tasks)
+        now = time.time()
+        key = command_text.strip().lower()
+        last_ts = _recent_commands.get(key, 0.0)
+        if (now - last_ts) < _cmd_dedup_window:
+            log(f"Dedup: ignoring duplicate command '{command_text}'", "voice")
+            return
+        _recent_commands[key] = now
+        # Prune old entries to avoid unbounded growth
+        for k in list(_recent_commands.keys()):
+            if now - _recent_commands[k] > 30.0:
+                del _recent_commands[k]
+
         log(f"Command received: '{command_text}'", "voice")
         update_status("thinking", command_text)
 

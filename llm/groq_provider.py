@@ -27,12 +27,12 @@ class GroqLLMProvider(BaseLLMProvider):
         self.api_key = api_key or os.getenv("GROQ_API_KEY") or "gsk_dummy_key_for_init"
         self.primary_model = model or os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.client = Groq(api_key=self.api_key)
-        # Fallback cascade: only real Groq-hosted models
+        # Fallback cascade: active Groq models
         self.fallback_models = [
             self.primary_model,
-            "llama-3.1-8b-instant",
-            "gemma2-9b-it",
-            "mixtral-8x7b-32768"
+            "openai/gpt-oss-120b",
+            "qwen/qwen3.8-27b",
+            "openai/gpt-oss-20b"
         ]
 
     def _parse_tool_args(self, args_str: str) -> Dict[str, Any]:
@@ -86,7 +86,19 @@ class GroqLLMProvider(BaseLLMProvider):
                 break
             except Exception as e:
                 last_error = e
-                if "429" in str(e) or "rate_limit" in str(e).lower():
+                err_str = str(e)
+                err_lower = err_str.lower()
+                # FIX-G: retry on any transient/capacity error; only re-raise hard auth errors
+                if (
+                    "429" in err_str
+                    or "503" in err_str
+                    or "rate_limit" in err_lower
+                    or "model_not_found" in err_lower
+                    or "does not exist" in err_lower
+                    or "timeout" in err_lower
+                    or "connection" in err_lower
+                    or "overloaded" in err_lower
+                ):
                     continue
                 else:
                     raise e

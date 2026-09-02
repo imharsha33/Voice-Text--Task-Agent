@@ -6,6 +6,7 @@ and complete task lifecycle telemetry. Completely platform-independent.
 
 import json
 import time
+import threading
 from typing import List, Dict, Any, Optional, Callable
 
 from llm import BaseLLMProvider, get_llm_provider
@@ -21,6 +22,12 @@ class AgentBrain:
         self.llm = llm_provider or get_llm_provider()
         self.conversation_history: List[Dict[str, Any]] = []
         self.log_callback: Optional[Callable[[str], None]] = None
+        # FIX-A: Thread-safety lock so concurrent commands don't corrupt history
+        self._history_lock = threading.Lock()
+        # FIX-D: Cache the system prompt to avoid calling AppleScript on every LLM turn
+        self._cached_prompt: Optional[str] = None
+        self._prompt_cache_time: float = 0.0
+        self._prompt_cache_ttl: float = 10.0  # refresh every 10 seconds
 
     def set_logger(self, log_fn: Callable[[str], None]):
         """Set logging function for status updates."""
@@ -31,6 +38,15 @@ class AgentBrain:
             self.log_callback(msg)
         else:
             log(msg, "brain")
+
+    def _get_system_prompt(self) -> str:
+        """Return cached system prompt, refreshing every 10 s.
+        Prevents AppleScript `get_frontmost_app()` from blocking every LLM call."""
+        now = time.time()
+        if self._cached_prompt is None or (now - self._prompt_cache_time) > self._prompt_cache_ttl:
+            self._cached_prompt = build_system_prompt()
+            self._prompt_cache_time = now
+        return self._cached_prompt
 
     def process_command(self, command: str, chunk_callback: Optional[Callable[[str], None]] = None) -> str:
         """
@@ -48,16 +64,18 @@ class AgentBrain:
         task_id = tracker.start_task(command)
         self._log(f"🧠 Processing [Task: {task_id[:8]}]: '{command}'")
 
-        # Add user message to conversation history
-        self.conversation_history.append({
-            "role": "user",
-            "content": command
-        })
+        # FIX-A: Thread-safe history append + snapshot for this task's messages
+        with self._history_lock:
+            self.conversation_history.append({
+                "role": "user",
+                "content": command
+            })
+            history_snapshot = list(self.conversation_history)
 
-        system_prompt = build_system_prompt()
+        system_prompt = self._get_system_prompt()
         messages = [
             {"role": "system", "content": system_prompt},
-            *self.conversation_history
+            *history_snapshot
         ]
 
         max_iterations = 8
@@ -139,13 +157,14 @@ class AgentBrain:
 
                     self._log(f"💬 Response: {spoken_response}")
 
-                    # Update history (keep last 16 turns)
-                    self.conversation_history.append({
-                        "role": "assistant",
-                        "content": raw_response
-                    })
-                    if len(self.conversation_history) > 16:
-                        self.conversation_history = self.conversation_history[-16:]
+                    # FIX-A: Thread-safe history update (keep last 16 turns)
+                    with self._history_lock:
+                        self.conversation_history.append({
+                            "role": "assistant",
+                            "content": raw_response
+                        })
+                        if len(self.conversation_history) > 16:
+                            self.conversation_history = self.conversation_history[-16:]
 
                     tracker.finish_task(task_id=task_id, success=True)
                     return spoken_response
@@ -155,23 +174,25 @@ class AgentBrain:
                 self._log(f"❌ {error_msg}")
                 # BUG-02 fix: always append a matching assistant reply so conversation
                 # history is never left with an orphaned user turn that confuses the LLM
-                self.conversation_history.append({
-                    "role": "assistant",
-                    "content": "I ran into an issue and could not complete that request."
-                })
-                if len(self.conversation_history) > 16:
-                    self.conversation_history = self.conversation_history[-16:]
+                with self._history_lock:
+                    self.conversation_history.append({
+                        "role": "assistant",
+                        "content": "I ran into an issue and could not complete that request."
+                    })
+                    if len(self.conversation_history) > 16:
+                        self.conversation_history = self.conversation_history[-16:]
                 tracker.finish_task(task_id=task_id, success=False, error=error_msg)
                 return "I ran into an issue executing that command. Please try again."
 
-        # BUG-17 fix: loop exhausted without a final text response — mark as incomplete, not success
-        self._log("\u26a0\ufe0f Max iterations reached without a final response.")
+        # BUG-17 fix: loop exhausted without a final text response
+        self._log("⚠️ Max iterations reached without a final response.")
         tracker.finish_task(task_id=task_id, success=False, error="Max iterations reached")
         return "I worked through several steps but couldn't produce a final answer. Please try rephrasing your request."
 
     def clear_history(self):
         """Clear conversation memory."""
-        self.conversation_history = []
+        with self._history_lock:
+            self.conversation_history = []
         self._log("Conversation history reset.")
 
 

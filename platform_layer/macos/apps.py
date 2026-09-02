@@ -152,11 +152,11 @@ class MacOSAppController(BaseAppController):
         except Exception:
             pass
 
-        # Fallback 2: search with mdfind / Spotlight
+        # Fallback 2: search with mdfind / Spotlight (FIX-F: add timeout to prevent hang)
         try:
             find_res = subprocess.run(
                 ["mdfind", f"kMDItemKind == 'Application' && kMDItemDisplayName == '*{resolved}*'c"],
-                capture_output=True, text=True
+                capture_output=True, text=True, timeout=5
             )
             paths = [p for p in find_res.stdout.strip().split("\n") if p.endswith(".app")]
             if paths:

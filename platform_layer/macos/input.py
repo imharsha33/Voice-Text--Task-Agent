@@ -14,7 +14,7 @@ from platform_layer.base import BaseInputController
 
 # Safety settings for PyAutoGUI
 pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.05
+pyautogui.PAUSE = 0.005  # FIX-E: was 0.05 (50ms per key) → 5ms; saves ~1s on long type_text calls
 
 
 class MacOSInputController(BaseInputController):
