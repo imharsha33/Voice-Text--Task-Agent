@@ -82,7 +82,7 @@ class ConnectionManager:
 
     def send_chat_message(self, role: str, text: str):
         """Broadcast an immediate chat message directly to UI."""
-        if not text or not str(text).strip():
+        if not text or not text.strip():
             return
         # BUG-13 fix: uuid import moved to module top level (no per-call import overhead)
         msg_id = f"msg_{int(time.time()*1000)}_{str(uuid.uuid4())[:6]}"
@@ -90,7 +90,7 @@ class ConnectionManager:
             "type": "chat_message",
             "id": msg_id,
             "role": role,
-            "text": str(text).strip(),
+            "text": text.strip(),
             "timestamp": time.strftime("%H:%M:%S")
         }
         self.chat_history.append(entry)

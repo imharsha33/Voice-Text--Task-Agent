@@ -10,6 +10,8 @@ import time
 import threading
 from pathlib import Path
 from typing import Optional, Callable
+from contextlib import asynccontextmanager
+import asyncio
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.staticfiles import StaticFiles
@@ -23,7 +25,14 @@ from voice.stt import GroqWhisperSTT
 BASE_DIR = Path(__file__).resolve().parent.parent
 DASHBOARD_DIR = BASE_DIR / "dashboard"
 
-app = FastAPI(title="Bujji Agent Mission Control")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    get_ws_manager().set_loop(asyncio.get_running_loop())
+    yield
+
+
+app = FastAPI(title="Bujji Agent Mission Control", lifespan=lifespan)
 
 # Mount dashboard static assets if directory exists
 if DASHBOARD_DIR.exists():
@@ -78,11 +87,6 @@ async def get_dashboard():
         "Expires": "0"
     })
 
-
-@app.on_event("startup")
-async def startup_event():
-    import asyncio
-    get_ws_manager().set_loop(asyncio.get_running_loop())
 
 
 @app.get("/status")

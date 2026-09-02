@@ -34,9 +34,12 @@ class GroqWhisperSTT(BaseSTTProvider):
                 file=("audio.wav", wav_bytes, "audio/wav"),
                 model=self.model,
                 language="en",
+                prompt="Hey Bujji, open Chrome, YouTube, search, play movie, music, volume, terminal, system.",
                 response_format="text",
                 temperature=0.0
             )
             return str(transcription).strip()
         except Exception as e:
+            # Keep errors visible in stdout / stderr
+            print(f"[GroqWhisperSTT] Transcription error: {e}")
             return ""

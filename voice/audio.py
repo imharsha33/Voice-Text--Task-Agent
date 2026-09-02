@@ -32,9 +32,9 @@ def record_audio_fixed(duration: float, sr: int = SAMPLE_RATE) -> np.ndarray:
 
 
 def record_until_silence(
-    max_duration: float = 8.0,
-    silence_rms: float = 320.0,
-    silence_duration: float = 0.8,
+    max_duration: float = 10.0,
+    silence_rms: float = 150.0,
+    silence_duration: float = 1.2,
     sr: int = SAMPLE_RATE
 ) -> np.ndarray:
     """
