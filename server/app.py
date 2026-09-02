@@ -1,5 +1,5 @@
 """
-app.py — FastAPI Application Server for Bujji Agent Mission Control
+app.py — FastAPI Application Server for VoxFlow Mission Control
 Provides REST API, WebSocket streams, and dashboard static files.
 """
 
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Bujji Agent Mission Control", lifespan=lifespan)
+app = FastAPI(title="VoxFlow Mission Control", lifespan=lifespan)
 
 # Mount dashboard static assets if directory exists
 if DASHBOARD_DIR.exists():
@@ -74,12 +74,12 @@ def send_chat_message(role: str, text: str):
 set_broadcast_callback(broadcast_log)
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def get_dashboard():
     """Serve the dashboard HTML without caching."""
     index_path = DASHBOARD_DIR / "index.html"
     if not index_path.exists():
-        return HTMLResponse("<h1>Bujji Agent Server is Running. Dashboard not found.</h1>")
+        return HTMLResponse("<h1>VoxFlow Server is Running. Dashboard not found.</h1>")
     content = index_path.read_text(encoding="utf-8")
     return HTMLResponse(content=content, headers={
         "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -150,6 +150,7 @@ async def toggle_agent(payload: Optional[dict] = None):
 
 
 @app.post("/api/audio/transcribe")
+@app.post("/api/voice_upload")
 async def transcribe_audio_file(file: UploadFile = File(...)):
     """Transcribe web audio recording directly via STT."""
     global _stt_instance
@@ -165,11 +166,12 @@ async def transcribe_audio_file(file: UploadFile = File(...)):
             file=("audio.webm", content, file.content_type or "audio/webm"),
             model="whisper-large-v3-turbo",
             language="en",
+            prompt="Hey VoxFlow, open Chrome, YouTube, search, play movie, music, volume, terminal, system.",
             response_format="text",
             temperature=0.0
         )
         text = str(transcription).strip()
-        return {"text": text}
+        return {"text": text, "transcription": text}
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 

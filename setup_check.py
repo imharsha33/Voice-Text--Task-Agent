@@ -12,7 +12,7 @@ ENV_PATH = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
 
 print("\n" + "═" * 60)
-print("  Bujji Agent — Cross-Platform Setup Validator")
+print("  VoxFlow Agent — Cross-Platform Setup Validator")
 print("═" * 60 + "\n")
 
 errors = []
@@ -142,8 +142,8 @@ for msg in errors:
 print("─" * 89)
 
 if errors:
-    print(f"\n❌ Setup check failed with {len(errors)} error(s). Please resolve them before running Bujji.\n")
+    print(f"\n❌ Setup check failed with {len(errors)} error(s). Please resolve them before running VoxFlow.\n")
     sys.exit(1)
 else:
-    print(f"\n✨ Setup check passed! Bujji is ready to run.\n")
+    print(f"\n✨ Setup check passed! VoxFlow is ready to run.\n")
     sys.exit(0)

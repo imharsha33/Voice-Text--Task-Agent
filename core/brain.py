@@ -1,5 +1,5 @@
 """
-brain.py — High-Level Autonomous AI Brain for Bujji Agent
+brain.py — High-Level Autonomous AI Brain for VoxFlow Agent
 Coordinates reasoning, multi-step planning, tool dispatching, streaming responses,
 and complete task lifecycle telemetry. Completely platform-independent.
 """

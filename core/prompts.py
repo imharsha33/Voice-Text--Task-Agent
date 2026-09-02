@@ -7,7 +7,7 @@ import re
 import datetime
 from platform_layer import get_platform
 
-BASE_SYSTEM_PROMPT = """You are Bujji, an exceptionally intelligent, capable, and friendly autonomous voice assistant.
+BASE_SYSTEM_PROMPT = """You are VoxFlow, an exceptionally intelligent, capable, and friendly autonomous voice assistant.
 You have full authority and tools to control applications, run terminal commands, manage files, automate web browsers, control YouTube playback, adjust system settings, manage notes/reminders, and answer questions.
 
 ### CORE OPERATIONAL DIRECTIVES:

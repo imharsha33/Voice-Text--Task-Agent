@@ -27,7 +27,7 @@ class VoiceListener:
     ):
         self.callback = on_command_callback
         self.stt = stt_provider or GroqWhisperSTT()
-        self.wake_word = (wake_word or os.getenv("WAKE_WORD", "hey bujji")).lower()
+        self.wake_word = (wake_word or os.getenv("WAKE_WORD", "hey voxflow")).lower()
         self.record_seconds = int(os.getenv("RECORD_SECONDS", "10"))
         self.silence_duration = float(os.getenv("SILENCE_DURATION", "1.2"))
         self.min_voice_rms = float(os.getenv("MIN_VOICE_RMS", "350"))
@@ -209,7 +209,7 @@ class VoiceListener:
 
                                         # Strip wake word if present
                                         lower = clean_text.lower()
-                                        for w in [self.wake_word, "hey bujji", "bujji"]:
+                                        for w in [self.wake_word, "hey voxflow", "voxflow"]:
                                             if lower.startswith(w):
                                                 clean_text = clean_text[len(w):].strip().lstrip(",.!? ")
                                                 lower = clean_text.lower()

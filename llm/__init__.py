@@ -1,8 +1,8 @@
-"""LLM provider package with support for current Groq provider and future BUJJI-LM extension point."""
+"""LLM provider package with support for current Groq provider and future VOXFLOW-LM extension point."""
 
 from llm.base import BaseLLMProvider, LLMResponse, ToolCall
 from llm.groq_provider import GroqLLMProvider
-from llm.bujji_lm_extension import BujjiLMProvider
+from llm.voxflow_lm_extension import VoxFlowLMProvider, BujjiLMProvider
 
 # Alias
 LLMProvider = BaseLLMProvider
@@ -19,6 +19,7 @@ __all__ = [
     "LLMResponse",
     "ToolCall",
     "GroqLLMProvider",
+    "VoxFlowLMProvider",
     "BujjiLMProvider",
     "get_llm_provider",
 ]

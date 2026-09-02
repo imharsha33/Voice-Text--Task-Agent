@@ -11,7 +11,7 @@
 
 ## 🛡️ Security Architecture & Safety Guardrails
 
-Bujji Agent executes actions on the host operating system with strict built-in safety controls:
+VoxFlow Agent executes actions on the host operating system with strict built-in safety controls:
 
 1. **Destructive Command Blocking**: Commands matching dangerous patterns (e.g. `rm -rf`, `format`, `del /s /q`, `mkfs`, fork bombs) are intercepted by [`tools/shell.py`](file:///Users/n.harshavardhan/Desktop/Bujji%20Agent/tools/shell.py) and blocked unless explicit confirmation (`confirm=True`) is provided.
 2. **System State Safeguards**: Operations like shutdown, reboot, and file deletion require explicit confirmation.

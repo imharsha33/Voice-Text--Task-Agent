@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   Bujji Agent — Ultra-Aesthetic Interactive Client Engine
+   VoxFlow Agent — Ultra-Aesthetic Interactive Client Engine
    Implements:
    1. Tap-to-Record Voice (Browser MediaRecorder -> Whisper API)
    2. Master Start / Stop Agent Controls
@@ -237,6 +237,7 @@ async function uploadVoiceAudio(blob) {
     const result = await res.json();
     if (result.transcription) {
       activeCommandText.innerHTML = `<span>"${escapeHtml(result.transcription)}"</span>`;
+      await sendCommand(result.transcription);
     }
   } catch (err) {
     console.error("Voice upload error:", err);

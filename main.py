@@ -1,5 +1,5 @@
 """
-main.py — Bujji Voice Agent Entry Point (Cross-Platform)
+main.py — VoxFlow Voice Agent Entry Point (Cross-Platform)
 Orchestrates Voice Listener, AI Brain, TTS Queue Player, and Dashboard Server.
 """
 
@@ -33,12 +33,12 @@ from server import (
 BANNER = r"""
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║    ██████╗ ██╗   ██╗     ██╗     ██╗██╗                     ║
-║    ██╔══██╗██║   ██║     ██║     ██║██║                     ║
-║    ██████╔╝██║   ██║     ██║     ██║██║                     ║
-║    ██╔══██╗██║   ██║██   ██║██   ██║██║                     ║
-║    ██████╔╝╚██████╔╝╚█████╔╝╚█████╔╝██║                     ║
-║    ╚═════╝  ╚═════╝  ╚════╝  ╚════╝ ╚═╝                     ║
+║   ██╗   ██╗ ██████╗ ██╗  ██╗███████╗██╗      ██████╗ ██╗    ██╗  ║
+║   ██║   ██║██╔═══██╗╚██╗██╔╝██╔════╝██║     ██╔═══██╗██║    ██║  ║
+║   ██║   ██║██║   ██║ ╚███╔╝ █████╗  ██║     ██║   ██║██║ █╗ ██║  ║
+║   ╚██╗ ██╔╝██║   ██║ ██╔██╗ ██╔══╝  ██║     ██║   ██║██║███╗██║  ║
+║    ╚████╔╝ ╚██████╔╝██╔╝ ██╗██║     ███████╗╚██████╔╝╚███╔███╔╝  ║
+║     ╚═══╝   ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝   ║
 ║                                                              ║
 ║         Cross-Platform Autonomous Voice AI Agent             ║
 ║         Powered by Groq llama-3.3-70b & Whisper              ║
@@ -51,7 +51,7 @@ def main():
     print(BANNER)
     current_os = get_platform().os_name
     print(f"  Detected Platform: {current_os}")
-    print("  Starting Bujji Agent...\n")
+    print("  Starting VoxFlow Agent...\n")
 
     # ── 1. Start Dashboard Server ──────────────────────────────────
     log("Starting dashboard server...", "info")
@@ -159,22 +159,22 @@ def main():
         return
 
     # ── 6. Ready State ─────────────────────────────────────────────
-    log("Bujji is ready! Just start speaking to give a command.", "success")
+    log("VoxFlow is ready! Just start speaking to give a command.", "success")
 
-    print(f"\n  ✅ Bujji is listening for commands on {current_os}")
+    print(f"\n  ✅ VoxFlow is listening for commands on {current_os}")
     print(f"  📊 Dashboard: http://localhost:{port}")
     print("  🛑 Press Ctrl+C to stop\n")
 
     # ── 7. Shutdown Handling ───────────────────────────────────────
     def shutdown(sig, frame):
-        print("\n\n  Shutting down Bujji...")
+        print("\n\n  Shutting down VoxFlow...")
         # BUG-14 fix: use try/except NameError in case listener was never assigned
         # (e.g. if VoiceListener.__init__ raised before assignment)
         try:
             listener.stop()
         except (NameError, UnboundLocalError, Exception):
             pass
-        speak_sync("Goodbye! Bujji is shutting down.")
+        speak_sync("Goodbye! VoxFlow is shutting down.")
         sys.exit(0)
 
     signal.signal(signal.SIGINT, shutdown)

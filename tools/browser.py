@@ -60,53 +60,63 @@ def _run_async(coro):
 async def _open_url_async(url: str) -> str:
     if not url.startswith("http://") and not url.startswith("https://"):
         url = "https://" + url
-    page = await _ensure_browser()
-    await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-    await asyncio.sleep(1)
-    title = await page.title()
-    return f"Opened {url} ('{title}')"
+    try:
+        page = await _ensure_browser()
+        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        await asyncio.sleep(1)
+        title = await page.title()
+        return f"Opened {url} ('{title}')"
+    except Exception as e:
+        import webbrowser
+        webbrowser.open(url)
+        return f"Opened {url} in default browser"
 
 
 async def _search_youtube_async(query: str) -> str:
     """Search YouTube and play the top matching video."""
-    page = await _ensure_browser()
     encoded = urllib.parse.quote(query)
     url = f"https://www.youtube.com/results?search_query={encoded}"
-    await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-    await asyncio.sleep(1.5)
-
-    # Dismiss cookie / promo popups
     try:
-        dialog_btns = await page.query_selector_all(
-            "button[aria-label*='Accept'], button[aria-label*='Agree'], tp-yt-paper-button#button"
-        )
-        for btn in dialog_btns[:2]:
-            if await btn.is_visible():
-                await btn.click()
-                await asyncio.sleep(0.5)
-    except Exception:
-        pass
+        page = await _ensure_browser()
+        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        await asyncio.sleep(1.5)
 
-    # Click first video result
-    selectors = [
-        "ytd-video-renderer a#thumbnail",
-        "ytd-video-renderer #video-title",
-        "a#video-title",
-        "#contents ytd-video-renderer a#thumbnail",
-        "a.ytd-thumbnail"
-    ]
-    for selector in selectors:
+        # Dismiss cookie / promo popups
         try:
-            element = await page.wait_for_selector(selector, timeout=4000)
-            if element and await element.is_visible():
-                await element.click()
-                await asyncio.sleep(2)
-                title = await page.title()
-                return f"Playing '{title}' on YouTube"
+            dialog_btns = await page.query_selector_all(
+                "button[aria-label*='Accept'], button[aria-label*='Agree'], tp-yt-paper-button#button"
+            )
+            for btn in dialog_btns[:2]:
+                if await btn.is_visible():
+                    await btn.click()
+                    await asyncio.sleep(0.5)
         except Exception:
-            continue
+            pass
 
-    return f"Searched YouTube for '{query}'"
+        # Click first video result
+        selectors = [
+            "ytd-video-renderer a#thumbnail",
+            "ytd-video-renderer #video-title",
+            "a#video-title",
+            "#contents ytd-video-renderer a#thumbnail",
+            "a.ytd-thumbnail"
+        ]
+        for selector in selectors:
+            try:
+                element = await page.wait_for_selector(selector, timeout=4000)
+                if element and await element.is_visible():
+                    await element.click()
+                    await asyncio.sleep(2)
+                    title = await page.title()
+                    return f"Playing '{title}' on YouTube"
+            except Exception:
+                continue
+
+        return f"Searched YouTube for '{query}'"
+    except Exception as e:
+        import webbrowser
+        webbrowser.open(url)
+        return f"Opened YouTube search for '{query}' in default browser"
 
 
 async def _search_google_async(query: str) -> str:

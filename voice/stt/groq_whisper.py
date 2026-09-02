@@ -34,7 +34,7 @@ class GroqWhisperSTT(BaseSTTProvider):
                 file=("audio.wav", wav_bytes, "audio/wav"),
                 model=self.model,
                 language="en",
-                prompt="Hey Bujji, open Chrome, YouTube, search, play movie, music, volume, terminal, system.",
+                prompt="Hey VoxFlow, open Chrome, YouTube, search, play movie, music, volume, terminal, system.",
                 response_format="text",
                 temperature=0.0
             )

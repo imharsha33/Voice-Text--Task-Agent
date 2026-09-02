@@ -1,5 +1,5 @@
 """
-test_architecture.py — Comprehensive Unit & Integration Tests for Cross-Platform Bujji Architecture
+test_architecture.py — Comprehensive Unit & Integration Tests for Cross-Platform VoxFlow Architecture
 """
 
 import sys
@@ -59,12 +59,12 @@ class TestFilesystemTools(unittest.TestCase):
 
     def test_read_write_list(self):
         # 1. Write file
-        res_write = write_file(str(self.test_file), "Hello from Cross-Platform Bujji!")
+        res_write = write_file(str(self.test_file), "Hello from Cross-Platform VoxFlow!")
         self.assertIn("Successfully wrote", res_write)
 
-        # 2. Read file
+        # Read
         content = read_file(str(self.test_file))
-        self.assertEqual(content, "Hello from Cross-Platform Bujji!")
+        self.assertEqual(content, "Hello from Cross-Platform VoxFlow!")
 
         # 3. List files
         list_res = list_files(str(self.test_dir))

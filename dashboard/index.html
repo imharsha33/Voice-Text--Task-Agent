@@ -6,9 +6,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Bujji AI</title>
+  <title>VoxFlow</title>
   <meta name="description" content="Minimalist, modern cross-platform voice and task assistant." />
-  <link rel="icon" type="image/jpeg" href="/static/bujji_logo.jpg" />
+  <link rel="icon" type="image/jpeg" href="/static/voxflow_logo.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -592,8 +592,8 @@
     <aside class="sidebar">
       <div class="brand-header">
         <div class="brand-title">
-          <img class="brand-logo" src="/static/bujji_logo.jpg" alt="Bujji Logo" />
-          <span class="brand-name">Bujji</span>
+          <img class="brand-logo" src="/static/voxflow_logo.jpg" alt="VoxFlow Logo" />
+          <span class="brand-name">VoxFlow</span>
         </div>
       </div>
 
@@ -656,7 +656,7 @@
       <!-- Top Bar -->
       <header class="chat-header">
         <div class="header-model-badge">
-          <span>Bujji AI</span>
+          <span>VoxFlow</span>
         </div>
         <div class="header-right">
           <div class="live-status-badge">
@@ -672,7 +672,7 @@
           
           <!-- Welcome Greeting (Shown when empty) -->
           <div class="welcome-card" id="welcomeCard">
-            <img class="welcome-avatar" src="/static/bujji_logo.jpg" alt="Bujji AI" />
+            <img class="welcome-avatar" src="/static/voxflow_logo.jpg" alt="VoxFlow" />
             <h2 class="welcome-title">How can I help you today?</h2>
             <p class="welcome-sub">Speak naturally, tap the record button, or type any command to control apps, play music, or automate tasks.</p>
 
@@ -706,7 +706,7 @@
             type="text" 
             id="chatInput" 
             class="chat-text-input" 
-            placeholder="Ask Bujji anything or give a command (or tap mic)..." 
+            placeholder="Ask VoxFlow anything or give a command (or tap mic)..." 
             autocomplete="off"
           />
 
@@ -871,7 +871,7 @@
       const row = document.createElement("div");
       row.className = "message-row assistant";
       row.innerHTML = `
-        <img class="msg-avatar assistant" src="/static/bujji_logo.jpg" alt="Bujji" />
+        <img class="msg-avatar assistant" src="/static/voxflow_logo.jpg" alt="VoxFlow" />
         <div class="msg-body">
           <div class="msg-bubble">${escapeHtml(clean)}</div>
           <div class="msg-actions">
@@ -1072,12 +1072,12 @@
         });
         const result = await res.json();
         if (result.transcription) {
-          appendUserMessage(result.transcription);
+          submitCommand(result.transcription);
         }
       } catch (err) {
         console.error("Upload error:", err);
       } finally {
-        chatInput.placeholder = "Ask Bujji anything or give a command (or tap mic)...";
+        chatInput.placeholder = "Ask VoxFlow anything or give a command (or tap mic)...";
       }
     }
 

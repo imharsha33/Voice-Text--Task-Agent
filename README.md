@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/bujji_logo.jpg" alt="Bujji AI Agent Official Logo" width="240" style="border-radius: 24px; box-shadow: 0 0 35px rgba(217, 70, 239, 0.45); border: 2px solid rgba(217, 70, 239, 0.3);" />
+  <img src="assets/voxflow_logo.jpg" alt="VoxFlow AI Agent Official Logo" width="240" style="border-radius: 24px; box-shadow: 0 0 35px rgba(217, 70, 239, 0.45); border: 2px solid rgba(217, 70, 239, 0.3);" />
 </p>
 
-<h1 align="center">Bujji Agent — Cross-Platform Voice Task AI</h1>
+<h1 align="center">VoxFlow — Cross-Platform Voice Task AI</h1>
 
 <p align="center">
   <em>An autonomous, low-latency, cross-platform voice assistant and automation agent for <strong>macOS</strong> and <strong>Windows</strong>.</em>
@@ -19,17 +19,17 @@
 
 ## 🌟 Overview
 
-**Bujji Agent** is a full-featured, voice-driven autonomous desktop assistant. On startup, Bujji greets you warmly:
+**VoxFlow** is a full-featured, voice-driven autonomous desktop assistant. On startup, VoxFlow greets you warmly:
 
 > 🎙️ *"Hello there! How can I help you today?"*
 
-By listening continuously for the wake word **"Hey Bujji"** or receiving instructions through its live Cyberpunk Glassmorphism web dashboard, Bujji reasons through multi-step tasks, controls desktop applications, manages files, executes safe terminal commands, automates browser sessions, and speaks responses in real time.
+By listening continuously for the wake word **"Hey VoxFlow"** or receiving instructions through its live Cyberpunk Glassmorphism web dashboard, VoxFlow reasons through multi-step tasks, controls desktop applications, manages files, executes safe terminal commands, automates browser sessions, and speaks responses in real time.
 
 ---
 
 ## ✨ Key Features
 
-- 🎙️ **Single-Pass Low-Latency Voice Pipeline**: Voice Activity Detection (VAD), Groq Whisper speech-to-text, and concurrent sentence-queue TTS for instant voice replies without awkward delays or overlapping voices.
+- 🎙️ **Single-Pass Low-Latency Voice Pipeline**: Voice Activity Detection (VAD) with pre-roll circular history buffer, Groq Whisper speech-to-text, and concurrent sentence-queue TTS for instant voice replies without awkward delays or overlapping voices.
 - 🖥️ **Full Cross-Platform Support (PAL)**: Built on a unified **Platform Abstraction Layer** with separate native controller implementations for **macOS** (AppleScript, system tools) and **Windows** (PowerShell, Win32, WMI), with Linux readiness.
 - 🌐 **Interactive Browser Automation**: Playwright-powered background and visual browser search, automated YouTube video playback, and web page reading.
 - 🛡️ **Built-in Safety & Confirmation Guardrails**: Intercepts destructive commands (`rm -rf`, `format`, `del /s /q`, `mkfs`, system shutdown, file deletion) and enforces explicit user confirmation.
@@ -51,7 +51,7 @@ By listening continuously for the wake word **"Hey Bujji"** or receiving instruc
  ┌──────────────────┐   ┌──────────────────┐            ┌──────────────────┐   ┌──────────────────┐
  │  Voice Subsystem │   │   LLM Provider   │            │  Tool Dispatcher │   │  Observability   │
  │  STT & TTS PAL   │   │  (Groq Cascade & │            │ (Shell, Browser, │   │ (Task Telemetry, │
- │  (Queue Player)  │   │ BUJJI-LM ready)  │            │ Filesystem, App) │   │ Tokens, Costs)   │
+ │  (Queue Player)  │   │ VOXFLOW-LM ready)│            │ Filesystem, App) │   │ Tokens, Costs)   │
  └──────────────────┘   └──────────────────┘            └────────┬─────────┘   └──────────────────┘
                                                                  │
                                                ┌─────────────────┴─────────────────┐
@@ -135,12 +135,12 @@ python setup_check.py
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
-### 3. Start Bujji Agent
+### 3. Start VoxFlow Agent
 ```bash
 python main.py
 ```
 This starts:
-1. 🎙️ **Voice Listener**: Listens for the wake word **"Hey Bujji"**.
+1. 🎙️ **Voice Listener**: Listens for the wake word **"Hey VoxFlow"**.
 2. 🌐 **Web Dashboard**: Interactive dashboard running at **`http://localhost:8765`**.
 3. 🔊 **Voice Greeting**: Speaks *"Hello there! How can I help you today?"*.
 
@@ -148,7 +148,7 @@ This starts:
 
 ## 🔒 Security & Confirmation Model
 
-Bujji automates real computer tasks with strict built-in safety controls:
+VoxFlow automates real computer tasks with strict built-in safety controls:
 - **Destructive Command Blocking**: High-risk commands (`rm -rf`, `format`, `del /s /q`, `mkfs`, fork bombs, system shutdown, and permanent file deletion) are automatically intercepted and blocked.
 - **Explicit Confirmation**: High-risk actions require explicit `confirm=True` approval from the user.
 - **Dynamic Path Containment**: Uses standard `pathlib.Path` to prevent unauthorized file system traversal.
@@ -161,9 +161,9 @@ Bujji automates real computer tasks with strict built-in safety controls:
 - [x] Full Windows Support (PowerShell, Win32, system utilities)
 - [x] Cross-Platform Sentence-Queue TTS with Clean Single Greeting
 - [x] Structured Task Telemetry & Real Token Cost Tracking
-- [x] Cyberpunk Glassmorphism Web Dashboard with Custom Bujji Brand Logo
+- [x] Cyberpunk Glassmorphism Web Dashboard with Custom VoxFlow Brand Logo
 - [ ] Native Linux Platform Implementation
-- [ ] Integration of custom **BUJJI-LM** foundational reasoning model upon release
+- [ ] Integration of custom **VOXFLOW-LM** foundational reasoning model upon release
 - [ ] Offline local STT / Whisper.cpp fallback
 
 ---

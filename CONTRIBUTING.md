@@ -1,6 +1,6 @@
-# Contributing to Bujji Voice Task Agent
+# Contributing to VoxFlow Voice Task Agent
 
-Thank you for your interest in contributing to **Bujji Agent**! We welcome contributions, bug reports, feature suggestions, and documentation improvements.
+Thank you for your interest in contributing to **VoxFlow Agent**! We welcome contributions, bug reports, feature suggestions, and documentation improvements.
 
 ---
 

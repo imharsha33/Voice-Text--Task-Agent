@@ -1,4 +1,4 @@
-# Bujji Agent Dependencies
+# VoxFlow Agent Dependencies
 
 # AI / LLM + Speech-to-Text (Groq handles both — no local model needed!)
 groq>=0.9.0
